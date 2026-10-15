@@ -17,7 +17,7 @@ MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$
   <a class="chip done" href="../ch06/index.html">6</a>
   <a class="chip done" href="../ch07/index.html">7</a>
   <a class="chip done" href="../ch08/index.html">8</a>
-  <a class="chip" href="../ch09/index.html">9</a>
+  <a class="chip done" href="../ch09/index.html">9</a>
   <a class="chip" href="../ch10/index.html">10</a>
   <a class="chip" href="../ch11/index.html">11</a>
   <a class="chip" href="../ch12/index.html">12</a>
@@ -390,7 +390,7 @@ If $X_i$ iid with $E|X_1|\lt\infty$, then $\bar X_n\xrightarrow{a.s.}\mu$. (Proo
 
 <div class="flag">
 <span class="label">Flag &mdash; what is and is not proved here.</span>
-The SLLN under the sharp assumption $E|X_1|\lt\infty$ is <strong>stated without proof</strong> on this page; the Borel&ndash;Cantelli argument below proves it only under the much stronger $EX_1^4\lt\infty$. The gap is not cosmetic &mdash; closing it is a real piece of work (Etemadi's truncation proof, or Kolmogorov's inequality plus a subsequence argument). Named results cited in passing on this page (Luk&aacute;cs 1942 for the $\bar X\perp S^2$ converse, de Finetti, L&eacute;vy continuity, Smirnov/probability integral transform) are attributions given from memory and not checked against the original papers; the statements are standard, but verify the citation before quoting one.
+Two results on this page are <strong>stated without proof</strong>. (i) The SLLN under the sharp assumption $E|X_1|\lt\infty$: the Borel&ndash;Cantelli argument below proves it only under the much stronger $EX_1^4\lt\infty$, and closing that gap is real work (Etemadi's truncation proof, or Kolmogorov's inequality plus a subsequence argument). (ii) The portmanteau lemma in &sect;5.5.3, which is quoted in order to make the continuous mapping theorem a one-liner. Both are standard and neither is in doubt; they are simply not established here. Named results cited in passing on this page (Luk&aacute;cs 1942 for the $\bar X\perp S^2$ converse, de Finetti, L&eacute;vy continuity, Smirnov/probability integral transform) are attributions given from memory and not checked against the original papers; the statements are standard, but verify the citation before quoting one.
 </div>
 <div class="box thm">
 <span class="label">Borel&ndash;Cantelli criterion, and the SLLN under a fourth moment.</span>
@@ -420,6 +420,33 @@ sweep m= 7:  n= 24   X_n=1   P(A_n)=0.1429</pre>
 <h3>&sect;5.5.3 Convergence in Distribution</h3>
 <div class="box def">
 $X_n\xrightarrow{d}X$ if $F_{X_n}(x)\to F_X(x)$ at every continuity point $x$ of $F_X$. The weakest mode &mdash; only the <em>laws</em> converge, the variables need not live on a common space. (a.s. $\Rightarrow$ $P$ $\Rightarrow$ $d$; none of the arrows reverse in general.)
+</div>
+
+<div class="box thm">
+<span class="label">Lemma (portmanteau, the part we need).</span>
+$X_n\xrightarrow{d}X$ if and only if $E\big[f(X_n)\big]\to E\big[f(X)\big]$ for every bounded continuous $f:\mathbb R\to\mathbb R$.
+<br><em>Not proved here.</em> This is the standard characterization of weak convergence (Billingsley, <em>Convergence of Probability Measures</em>); the forward direction is an integration-by-parts/approximation argument and the reverse direction follows by approximating indicators of $(-\infty,x]$ at continuity points. It is quoted because it makes the next theorem a one-liner.
+</div>
+
+<div class="box thm">
+<span class="label">Continuous Mapping Theorem.</span>
+Let $g$ be continuous (on a set containing the range of $X$ with probability $1$). Then
+$$X_n\xrightarrow{a.s.}X\Rightarrow g(X_n)\xrightarrow{a.s.}g(X),$$
+$$X_n\xrightarrow{P}X\Rightarrow g(X_n)\xrightarrow{P}g(X),$$
+$$X_n\xrightarrow{d}X\Rightarrow g(X_n)\xrightarrow{d}g(X).$$
+<p class="proof-label">Proof.</p>
+<em>Almost sure.</em> On the probability-one event where $X_n(\omega)\to X(\omega)$ and $g$ is continuous at $X(\omega)$, continuity gives $g(X_n(\omega))\to g(X(\omega))$ directly.
+<em>In probability.</em> Fix $\varepsilon,\eta\gt0$. Choose $M$ with $P(|X|\gt M)\lt\eta/2$ (possible since $X$ is a.s. finite). On the compact set $[-M-1,M+1]$ the function $g$ is uniformly continuous, so there is $\delta\in(0,1)$ such that $|g(u)-g(v)|\le\varepsilon$ whenever $u,v\in[-M-1,M+1]$ and $|u-v|\le\delta$. If $|g(X_n)-g(X)|\gt\varepsilon$ then either $|X|\gt M$ or $|X_n-X|\gt\delta$, so
+$$P\big(|g(X_n)-g(X)|\gt\varepsilon\big)\le P(|X|\gt M)+P(|X_n-X|\gt\delta).$$
+The second term $\to0$ by assumption, so the $\limsup$ is at most $\eta/2$; letting $\eta\downarrow0$ gives the claim.
+<em>In distribution.</em> Let $f$ be bounded and continuous. Then $f\circ g$ is bounded and continuous, so by the Lemma applied to $X_n\xrightarrow{d}X$,
+$$E\big[f(g(X_n))\big]\to E\big[f(g(X))\big].$$
+Since this holds for every bounded continuous $f$, the Lemma read in the reverse direction gives $g(X_n)\xrightarrow{d}g(X)$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Why this theorem earns its keep.</span>
+It is the workhorse that lets you move limits through functions without redoing any analysis, and it is used constantly later: $S\xrightarrow{P}\sigma$ from $S^2\xrightarrow{P}\sigma^2$ via $g=\sqrt\cdot$ (needed for Slutsky and the $t$-statistic below), the consistency of method-of-moments estimators (&sect;7.2.1, where $\hat\theta=g(m_1,\dots,m_k)$ for continuous $g$), the squared limit in the second-order delta method (&sect;5.5.4), and the $\chi^2$ limits of likelihood ratio statistics (&sect;10.3.1). The multivariate statement is identical with $g:\mathbb R^k\to\mathbb R^m$ continuous, and that is the version &sect;7.2.1 actually needs.
 </div>
 <div class="box thm">
 <span class="label">Central Limit Theorem.</span>

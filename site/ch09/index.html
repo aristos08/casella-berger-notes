@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ch.9 Interval Estimation &mdash; C&amp;B Course Notes</title>
 <link rel="stylesheet" href="../assets/style.css">
-<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']],tags:'none'}};</script>
+<script>
+MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']], tags: 'none' } };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
@@ -15,29 +17,354 @@
   <a class="chip done" href="../ch06/index.html">6</a>
   <a class="chip done" href="../ch07/index.html">7</a>
   <a class="chip done" href="../ch08/index.html">8</a>
-  <a class="chip current" href="../ch09/index.html">9</a>
+  <a class="chip current done" href="../ch09/index.html">9</a>
   <a class="chip" href="../ch10/index.html">10</a>
   <a class="chip" href="../ch11/index.html">11</a>
   <a class="chip" href="../ch12/index.html">12</a>
 </nav>
 <main>
 <h1>Chapter 9 &mdash; Interval Estimation
-<span class="subtitle">Finding interval estimators (inverting tests, pivots, pivoting the CDF, Bayesian) and evaluating coverage &amp; optimality</span>
+<span class="subtitle">Confidence sets as inverted tests, pivots, and what coverage does not promise</span>
 </h1>
 
-<div class="todo-banner"><strong>Not yet written.</strong> Scaffolded with full section structure. Prompt &ldquo;do chapter 9&rdquo; (or specific sections) to fill in proofs, intuition, and seeded simulations at the Chapter 5 standard.</div>
+<p class="lead">This chapter is Chapter 8 read backwards. A confidence set is the collection of parameter values a test would <em>not</em> reject, and that correspondence is an exact bijection &mdash; so every optimality theorem about tests becomes one about intervals, and every pathology of tests becomes one of intervals. The payoff for the care taken in &sect;8.3.2 is that &sect;9.3.2 is almost free.</p>
 
+<!-- ============================= 9.1 ============================= -->
 <h2>&sect;9.1 Introduction</h2>
+
+<div class="box def">
+<span class="label">Definition.</span>
+An <em>interval estimator</em> is a pair of statistics $L(X)\le U(X)$; the random set $[L(X),U(X)]$ is an <em>interval estimate</em> once realized. More generally a <em>set estimator</em> is a map $x\mapsto C(x)\subset\Theta$. Its <em>coverage probability</em> is
+$$P_\theta\big(\theta\in C(X)\big),$$
+a function of $\theta$, and its <em>confidence coefficient</em> is $\inf_\theta P_\theta(\theta\in C(X))$. A set with confidence coefficient $1-\alpha$ is called a $1-\alpha$ confidence set.
+</div>
+
+<div class="box remark">
+<span class="label">What the randomness is attached to.</span>
+In $P_\theta(\theta\in C(X))$ the parameter $\theta$ is a fixed unknown constant and $C(X)$ is the random object. The statement "$\theta$ lies in $[0.3,0.7]$ with probability $0.95$" is therefore a category error if $[0.3,0.7]$ is an interval you have already computed: that interval either contains $\theta$ or it does not, and no probability attaches to the realized set. The $0.95$ is a property of the <em>procedure</em>, evaluated before the data are seen. &sect;9.3.1 shows that this is not pedantry &mdash; the same procedure can have coverage $1$ on some samples and far below $0.95$ on others while averaging to exactly $0.95$.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the procedure covers 95% of the time; individual intervals do not have probabilities</div>
+<p>$t$-intervals $\bar X\pm t_{0.975,9}\,S/\sqrt n$ from $N(0,1)$ data, $n=10$, $200{,}000$ samples (true $\mu=0$):</p>
+<pre>coverage = 0.9491   (exact theory 0.9500)
+mean length = 1.3907, sd of length = 0.3332
+
+first 8 realized intervals:
+   [-0.914, +0.774]  covers      [-0.272, +0.661]  covers
+   [-0.849, +0.416]  covers      [-0.437, +1.205]  covers
+   [-0.051, +0.884]  covers      [-0.552, +0.665]  covers
+   [-0.424, +0.467]  covers
+   [-0.596, +0.286]  covers
+
+of the first 200 intervals, 14 missed. The first few:
+   sample  #67: [-1.382, -0.187]   MISSES
+   sample  #70: [+0.004, +1.077]   MISSES
+   sample  #71: [+0.126, +1.181]   MISSES</pre>
+<p>Note the lengths vary substantially (sd $0.33$ on a mean of $1.39$), because $S$ is random. A "95% interval" is not a fixed-width guarantee.</p>
+</div>
+
+<!-- ============================= 9.2 ============================= -->
 <h2>&sect;9.2 Methods of Finding Interval Estimators</h2>
+
 <h3>&sect;9.2.1 Inverting a Test Statistic</h3>
+
+<div class="box thm">
+<span class="label">Theorem (the duality of tests and confidence sets).</span>
+For each $\theta_0\in\Theta$ let $A(\theta_0)\subset\mathcal X$ be the acceptance region of a level-$\alpha$ test of $H_0:\theta=\theta_0$. Define
+$$C(x)=\{\theta_0\in\Theta:\;x\in A(\theta_0)\}.$$
+Then $C(X)$ is a $1-\alpha$ confidence set. Conversely, if $C(X)$ is a $1-\alpha$ confidence set then $A(\theta_0)=\{x:\theta_0\in C(x)\}$ is the acceptance region of a level-$\alpha$ test of $H_0:\theta=\theta_0$.
+<p class="proof-label">Proof.</p>
+The entire content is the tautology built into the definition:
+$$\theta_0\in C(x)\iff x\in A(\theta_0).$$
+Taking $\theta_0=\theta$ equal to the true value and probabilities under $P_\theta$,
+$$P_\theta\big(\theta\in C(X)\big)=P_\theta\big(X\in A(\theta)\big)=1-P_\theta\big(\text{reject }H_0:\theta=\theta\big)\ge1-\alpha,$$
+because the test has level $\alpha$ and $H_0$ is true. Reading the same equivalence from right to left gives the converse. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">How to use it, and the orientation trap.</span>
+The recipe is: write down the test you believe in, then <em>solve the acceptance inequality for the parameter instead of for the data</em>. For the two-sided $t$-test, $H_0:\mu=\mu_0$ is accepted iff
+$$\Big|\frac{\bar x-\mu_0}{s/\sqrt n}\Big|\le t_{1-\alpha/2,\,n-1},$$
+and solving that inequality for $\mu_0$ gives $\bar x\pm t_{1-\alpha/2,n-1}s/\sqrt n$. Note which variable is held fixed in each reading: $A(\theta_0)$ is a set of <em>sample points</em> for fixed $\theta_0$, while $C(x)$ is a set of <em>parameter values</em> for fixed $x$. They are slices of the same subset of $\mathcal X\times\Theta$ in perpendicular directions.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the inversion really is an identity</div>
+<p>$n=10$, comparing the endpoints obtained by solving the acceptance inequality with the closed-form $t$-interval over $50{,}000$ samples, and then checking the set equality pointwise on a grid for one sample:</p>
+<pre>max endpoint discrepancy over 50,000 samples = 0.000e+00
+
+grid check on one sample: 0 of 4001 grid points disagree between
+   "the test accepts mu0"  and  "mu0 lies in the interval"</pre>
+</div>
+
+<div class="box remark">
+<span class="label">Inverted sets need not be intervals.</span>
+Nothing in the theorem guarantees $C(x)$ is an interval, or even non-empty. Inverting a likelihood ratio test in awkward models can produce unions of intervals, the whole line, or the empty set (the Fieller interval for a ratio of normal means is the standard example: its "interval" can be the complement of a bounded interval). The duality gives correct coverage regardless; interpretability is a separate matter. This is why &sect;9.2.2 and &sect;9.2.3 exist as practical routes.
+</div>
+
 <h3>&sect;9.2.2 Pivotal Quantities</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+$Q(X,\theta)$ is a <em>pivotal quantity</em> (a pivot) if its distribution is the same for every $\theta$ &mdash; i.e. the law of $Q(X,\theta)$ under $P_\theta$ does not depend on $\theta$.
+</div>
+
+<div class="box thm">
+<span class="label">Proposition.</span>
+Let $Q(X,\theta)$ be a pivot and choose $a\lt b$ with $P(a\le Q\le b)=1-\alpha$. Then
+$$C(x)=\{\theta:\;a\le Q(x,\theta)\le b\}$$
+is a $1-\alpha$ confidence set.
+<p class="proof-label">Proof.</p>
+$P_\theta(\theta\in C(X))=P_\theta\big(a\le Q(X,\theta)\le b\big)=1-\alpha$, the last equality because the law of $Q(X,\theta)$ is the same &mdash; and in particular has the same probability of $[a,b]$ &mdash; for every $\theta$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Where pivots come from: the structure of &sect;6.4.</span>
+Pivots are the invariance idea of the equivariance principle, reused. In a location family $X_i=\theta+Z_i$, any translation-invariant function of $X-\theta\mathbf 1$ is a pivot &mdash; e.g. $\bar X-\theta$. In a scale family $X_i=\sigma Z_i$, $\bar X/\sigma$ and $S/\sigma$ are pivots. In a location-scale family $(\bar X-\mu)/S$ is a pivot, and Theorem 5.3.1 identifies its exact law as $t_{n-1}$: that theorem is precisely the statement that the $t$-statistic is a pivot with a known distribution. Likewise $(n-1)S^2/\sigma^2\sim\chi^2_{n-1}$ makes it the natural pivot for a variance.
+</div>
+
+<div class="box remark">
+<span class="label">Equal tails is convenient, not optimal.</span>
+Any $(a,b)$ with $P(a\le Q\le b)=1-\alpha$ works, so there is a one-parameter family of $1-\alpha$ intervals and the usual $\alpha/2$-in-each-tail choice is a convention. For a symmetric unimodal pivot it does give the shortest interval; for a skewed pivot such as $\chi^2_{n-1}$ it does not. The shortest interval of the form $[SS/b,\,SS/a]$ solves
+$$\min_{a,b}\Big(\frac1a-\frac1b\Big)\quad\text{subject to}\quad F(b)-F(a)=1-\alpha,$$
+whose solution puts unequal mass in the two tails.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the $\chi^2$ pivot for $\sigma^2$, equal-tailed versus shortest</div>
+<p>$N(0,4)$, $n=10$, $200{,}000$ samples. Equal-tailed uses $\chi^2_{0.025,9}=2.7004$ and $\chi^2_{0.975,9}=19.0228$:</p>
+<pre>equal-tailed [SS/19.0228, SS/2.7004]: coverage=0.9499   mean length=11.4618
+
+shortest 95% interval of this form: lower tail mass 0.0474 (not 0.025),
+                                     a=3.2715, b=25.4096
+                                     coverage=0.9507   mean length=9.6007
+
+  -> 16.2% shorter at the same coverage</pre>
+<p>A $16\%$ length reduction for free, simply by not splitting the tails evenly. Equal-tailed variance intervals are near-universal in practice anyway, because they are tabulated and because the optimum depends on the parametrization (shortest for $\sigma^2$ is not shortest for $\sigma$).</p>
+</div>
+
 <h3>&sect;9.2.3 Pivoting the CDF</h3>
+
+<div class="box thm">
+<span class="label">Theorem (continuous, monotone case).</span>
+Let $T$ be a statistic whose cdf $F(t\mid\theta)$ is continuous in $t$ and strictly decreasing in $\theta$ for each fixed $t$. Fix $\alpha_1+\alpha_2=\alpha$ and define $\theta_L(t),\theta_U(t)$ as the solutions of
+$$F\big(t\mid\theta_U(t)\big)=\alpha_1,\qquad F\big(t\mid\theta_L(t)\big)=1-\alpha_2 .$$
+Then $[\theta_L(T),\theta_U(T)]$ is a $1-\alpha$ confidence interval.
+<p class="proof-label">Proof.</p>
+Because $F(t\mid\cdot)$ is strictly decreasing, for fixed $t$
+$$\theta\gt\theta_U(t)\iff F(t\mid\theta)\lt F\big(t\mid\theta_U(t)\big)=\alpha_1,$$
+and symmetrically $\theta\lt\theta_L(t)\iff F(t\mid\theta)\gt1-\alpha_2$. Now the key step: by the probability integral transform (&sect;5.6.1), continuity of $F(\cdot\mid\theta)$ gives
+$$F(T\mid\theta)\sim\mathrm{Uniform}(0,1)\quad\text{under }P_\theta .$$
+Hence $P_\theta\big(\theta\gt\theta_U(T)\big)=P(U\lt\alpha_1)=\alpha_1$ and $P_\theta\big(\theta\lt\theta_L(T)\big)=P(U\gt1-\alpha_2)=\alpha_2$. Subtracting both tail events,
+$$P_\theta\big(\theta_L(T)\le\theta\le\theta_U(T)\big)=1-\alpha_1-\alpha_2=1-\alpha. \qquad\blacksquare$$
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; exponential scale, exact coverage</div>
+<p>$X_i$ iid exponential with scale $\theta=3$, $n=10$, so $T=\sum X_i$ and $T/\theta\sim\mathrm{Gamma}(10,1)$ is a pivot. $200{,}000$ samples:</p>
+<pre>interval [T/17.0848, T/4.7954]  (Gamma(10,1) quantiles at 0.975 and 0.025)
+coverage = 0.9502     (exact theory 0.9500)</pre>
+</div>
+
+<div class="box thm">
+<span class="label">The discrete case, and Clopper&ndash;Pearson.</span>
+If $T$ is discrete, $F(T\mid\theta)$ is <em>not</em> uniform &mdash; it satisfies only $P_\theta\big(F(T\mid\theta)\le u\big)\le u$ &mdash; so the construction yields coverage $\ge1-\alpha$: valid but conservative. For $X\sim\mathrm{Binomial}(n,p)$ the standard version solves the two tail equations
+$$P(X\ge x\mid p_L)=\tfrac\alpha2,\qquad P(X\le x\mid p_U)=\tfrac\alpha2,$$
+which have closed-form Beta solutions
+$$p_L=B^{-1}_{\alpha/2}(x,\,n-x+1),\qquad p_U=B^{-1}_{1-\alpha/2}(x+1,\,n-x).$$
+<p class="proof-label">Proof of the Beta identity.</p>
+The identity needed is $P(\mathrm{Bin}(n,p)\ge x)=P\big(\mathrm{Beta}(x,n-x+1)\le p\big)$, and Chapter 5 already supplies it. Let $U_1,\dots,U_n$ be iid $\mathrm{Uniform}(0,1)$. The event that at least $x$ of them fall below $p$ is exactly the event that the $x$-th order statistic falls below $p$:
+$$\{\mathrm{Bin}(n,p)\ge x\}=\{U_{(x)}\le p\}.$$
+By &sect;5.4, $U_{(x)}\sim\mathrm{Beta}(x,\,n-x+1)$, which gives the identity, and solving $P(X\ge x\mid p_L)=\alpha/2$ for $p_L$ is then inverting a Beta cdf. <span class="qed">&#8718;</span>
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; Clopper&ndash;Pearson intervals, $n=20$</div>
+<pre>x= 0: [0.0000, 0.1684]      x=10: [0.2720, 0.7280]
+x= 1: [0.0013, 0.2487]      x=19: [0.7513, 0.9987]
+x= 5: [0.0866, 0.4910]      x=20: [0.8316, 1.0000]</pre>
+<p>Observing zero successes in twenty trials does not license $p=0$; it licenses $p\le0.168$. That asymmetry is exactly what the inversion delivers and what the Wald interval below destroys.</p>
+</div>
+
+<!-- ============================= 9.2.4 ============================= -->
 <h3>&sect;9.2.4 Bayesian Intervals</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+A <em>credible set</em> of level $1-\alpha$ is any $C$ with posterior probability $P(\theta\in C\mid x)\ge1-\alpha$. Here the probability statement is about $\theta$ given the data, which is the statement people <em>want</em> to make and which a confidence set does not license.
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (HPD sets minimize volume).</span>
+Suppose the posterior has a density $\pi(\cdot\mid x)$ with respect to Lebesgue measure. Let
+$$C^*=\{\theta:\pi(\theta\mid x)\ge k\}$$
+with $k$ chosen so that $P(\theta\in C^*\mid x)=1-\alpha$. Then among all sets $C$ with $P(\theta\in C\mid x)\ge1-\alpha$, $C^*$ has minimum volume.
+<p class="proof-label">Proof.</p>
+This is the Neyman&ndash;Pearson argument of &sect;8.3.2 with the roles of the two measures swapped. For any competitor $C$, consider the pointwise inequality
+$$\big(\mathbf 1_{C^*}(\theta)-\mathbf 1_C(\theta)\big)\big(\pi(\theta\mid x)-k\big)\;\ge\;0 ,$$
+valid because where $\pi\ge k$ we have $\mathbf 1_{C^*}=1\ge\mathbf 1_C$ and the second factor is $\ge0$, while where $\pi\lt k$ we have $\mathbf 1_{C^*}=0\le\mathbf 1_C$ and the second factor is $\lt0$. Integrating over $\theta$,
+$$\underbrace{\int_{C^*}\!\pi-\int_C\!\pi}_{\le\,(1-\alpha)-(1-\alpha)\,=\,0}\;\ge\;k\big[\mathrm{vol}(C^*)-\mathrm{vol}(C)\big].$$
+Since $k\gt0$, this forces $\mathrm{vol}(C^*)\le\mathrm{vol}(C)$. <span class="qed">&#8718;</span>
+<br>A consequence: the HPD interval has <em>equal posterior density at its endpoints</em>, since the boundary of $C^*$ is a level set of $\pi$.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; HPD versus equal-tailed on a skewed posterior</div>
+<p>The $\mathrm{Gamma}(\text{shape }5,\text{rate }6)$ posterior from &sect;7.3.4:</p>
+<pre>equal-tailed 95%: [0.2706, 1.7069]   length 1.4364
+HPD          95%: [0.2012, 1.5717]   length 1.3705   (mass 0.9500)
+
+HPD is 4.58% shorter
+endpoint densities: 0.15868 vs 0.15868   (equal, as the theorem requires)</pre>
+<p>The equal endpoint densities are an exact numerical confirmation of the level-set characterization. The length gain is modest here because the posterior is only mildly skewed; for strongly skewed or bounded posteriors it is large, and for a bimodal posterior the HPD set is a <em>union</em> of intervals while the equal-tailed interval would span the low-density valley between the modes.</p>
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; a credible interval is not a confidence interval</div>
+<p>Exact frequentist coverage of the $95\%$ equal-tailed credible interval under the Jeffreys prior $\mathrm{Beta}(\tfrac12,\tfrac12)$, $n=20$ (computed by exact summation over $x$, not simulated):</p>
+<pre>   p    |  coverage
+  0.02  |   0.9401
+  0.05  |   0.9841
+  0.10  |   0.9568
+  0.25  |   0.9348
+  0.50  |   0.9586
+
+over a grid of p in (0.001, 0.999):  min = 0.8937   mean = 0.9510</pre>
+<p>The Jeffreys credible interval averages almost exactly $95\%$ frequentist coverage but dips to $89\%$ at some $p$. "$95\%$ credible" and "$95\%$ confidence" are different guarantees, and neither implies the other &mdash; though for many models they agree to first order, which is the content of &sect;10.4.</p>
+</div>
+
+<!-- ============================= 9.3 ============================= -->
 <h2>&sect;9.3 Methods of Evaluating Interval Estimators</h2>
+
 <h3>&sect;9.3.1 Size and Coverage Probability</h3>
+
+<div class="box remark">
+<span class="label">The two criteria are in tension.</span>
+We want high coverage and short length, and these pull against each other: the whole parameter space has coverage $1$ and infinite length, a single point has length $0$ and coverage $0$. So the standard move is to fix coverage at $1-\alpha$ and minimize length (or volume, or false coverage &mdash; &sect;9.3.2). The <em>real</em> failures in practice are intervals whose actual coverage is nowhere near the nominal value.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; three binomial intervals, exact coverage</div>
+<p>$n=20$, nominal $95\%$. Coverage computed <em>exactly</em> as $\sum_x\binom nxp^x(1-p)^{n-x}\mathbf 1\{p\in C(x)\}$, so there is no Monte Carlo error at all:</p>
+<pre>   p    |   Wald   |  Wilson  |  Clopper-Pearson
+  0.02  |  0.3318  |  0.9401  |  0.9929
+  0.05  |  0.6389  |  0.9245  |  0.9841
+  0.10  |  0.8760  |  0.9568  |  0.9887
+  0.20  |  0.9208  |  0.9563  |  0.9785
+  0.35  |  0.9360  |  0.9683  |  0.9683
+  0.50  |  0.9586  |  0.9586  |  0.9586
+
+over a grid of p in (0.001, 0.999):
+   Wald             min=0.0198  mean=0.8467  mean length=0.3243
+   Wilson           min=0.8516  mean=0.9532  mean length=0.3255
+   Clopper-Pearson  min=0.9581  mean=0.9770  mean length=0.3663</pre>
+<p>The Wald interval $\hat p\pm z\sqrt{\hat p(1-\hat p)/n}$ &mdash; the one in every introductory course &mdash; has <strong>minimum coverage $0.0198$</strong> and averages $0.847$ against a nominal $0.95$. The mechanism is visible at $x=0$ or $x=n$, where $\hat p(1-\hat p)=0$ makes the interval a single point that covers nothing. Clopper&ndash;Pearson never drops below $0.95$ (as the conservative inversion guarantees) at the cost of $13\%$ more length; Wilson keeps essentially the same length as Wald with vastly better coverage, which is why it is the recommended default.</p>
+</div>
+
+<div class="box remark">
+<span class="label">Coverage is an average over samples you did not observe.</span>
+Confidence is a frequency property of the procedure, computed by averaging over the whole sample space. That average can conceal enormous variation across recognizable subsets of samples &mdash; and when an <em>ancillary</em> statistic (&sect;6.2.3) tells you which subset you are in, the average becomes hard to defend as a description of your particular analysis.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; a 95% interval that covers with probability 1, or 0.59</div>
+<p>$X_i$ iid $\mathrm{Uniform}(\theta,\theta+1)$, $n=5$, with $R=X_{(n)}-X_{(1)}$ (ancillary) and $\hat\theta=\tfrac12(X_{(1)}+X_{(n)})-\tfrac12$. Chapter 6 proved that given $R=r$ the error is $\mathrm{Uniform}\big(-\tfrac{1-r}{2},\tfrac{1-r}{2}\big)$, so the conditional coverage of $\hat\theta\pm c$ is exactly $\min\{1,\,2c/(1-r)\}$. Choosing $c$ for $95\%$ <em>unconditional</em> coverage and then binning by the observed $R$ ($300{,}000$ samples):</p>
+<pre>half-width for 95% unconditional coverage: c = 0.22536
+conditional coverage is exactly 1 once r >= 1 - 2c = 0.5493
+
+  range R bin     | share of samples | cond. coverage | theory (bin average)
+ [0.0000,0.3000)  |     0.0306       |    0.5945      |     0.5931
+ [0.3000,0.5493)  |     0.2242       |    0.8330      |     0.8330
+ [0.5493,0.7800)  |     0.4408       |    1.0000      |     1.0000
+ [0.7800,1.0000)  |     0.3043       |    1.0000      |     1.0000</pre>
+<p>Simulated conditional coverage matches the exact bin-averaged theory throughout. So: $74.5\%$ of the time this "$95\%$" interval is <em>certain</em> to cover, and $3\%$ of the time it covers with probability $0.59$ &mdash; and you can tell which case you are in by looking at $R$, whose distribution carries no information about $\theta$. Reporting $95\%$ when you can see $R$ is averaging over samples you know you did not get.</p>
+</div>
+
+<div class="flag">
+<span class="label">Flag &mdash; this is a critique, and it has answers.</span>
+The example above is the "relevant subsets" objection to unconditional coverage, in the tradition of Fisher's conditionality arguments and the Buehler/Robinson literature on relevant subsets. I am presenting it because it is exactly computable and sharpens what coverage means &mdash; not as a refutation of confidence intervals. The standard frequentist responses are real: condition on the ancillary (which is what the conditionality principle of &sect;6.3 recommends, and which here would produce an $R$-dependent interval with exact conditional coverage), or note that for most models in practice no such dramatic recognizable subset exists. I have not surveyed that literature and this page does not settle the dispute.
+</div>
+
 <h3>&sect;9.3.2 Test-Related Optimality</h3>
+
+<div class="box def">
+<span class="label">Definition (false coverage).</span>
+For a set estimator $C$ and $\theta'\ne\theta$, the <em>false coverage probability</em> is $P_\theta\big(\theta'\in C(X)\big)$: the chance of including a wrong value when $\theta$ is true. A $1-\alpha$ set is <em>uniformly most accurate</em> (UMA) if it minimizes this, simultaneously in $\theta$, among all $1-\alpha$ sets.
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (UMP tests invert to UMA sets).</span>
+Fix $\theta'$. Among $1-\alpha$ confidence sets, minimizing $P_\theta(\theta'\in C(X))$ is the same problem as maximizing the power at $\theta$ of a level-$\alpha$ test of $H_0:\theta=\theta'$. Consequently, if a UMP level-$\alpha$ test of $H_0:\theta=\theta'$ exists for every $\theta'$, inverting those tests gives a UMA $1-\alpha$ confidence set.
+<p class="proof-label">Proof.</p>
+By duality, $A(\theta')=\{x:\theta'\in C(x)\}$ is the acceptance region of a level-$\alpha$ test of $H_0:\theta=\theta'$, with power function $\beta_{\theta'}(\theta)=1-P_\theta\big(X\in A(\theta')\big)$. Therefore
+$$P_\theta\big(\theta'\in C(X)\big)=P_\theta\big(X\in A(\theta')\big)=1-\beta_{\theta'}(\theta),$$
+so minimizing the left side over $1-\alpha$ sets is exactly maximizing $\beta_{\theta'}(\theta)$ over level-$\alpha$ tests. If the maximizer is UMP &mdash; the same test maximizing power at <em>every</em> $\theta$ &mdash; then the inverted set minimizes false coverage at every $\theta$, which is the UMA property. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">What this inherits from Chapter 8, including the bad news.</span>
+Karlin&ndash;Rubin gives UMP one-sided tests in MLR families, so <em>one-sided</em> confidence bounds in such families are UMA. And the two-sided obstruction transfers verbatim: since no UMP two-sided test exists (&sect;8.3.2), no UMA two-sided interval exists either. The repair is also inherited &mdash; restrict to unbiased or equivariant procedures, within which the usual two-sided intervals are optimal.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; UMA means fewer false values included</div>
+<p>One-sided $95\%$ lower bounds for a normal mean, $\sigma=1$ known, $n=10$, true $\mu=0$. The UMP-inverted bound is $\bar X-0.5201$; the competitor is a size-calibrated median-based bound. Both have $95\%$ coverage of the truth; the table reports $P(\mu'\in C(X))$ for false values $\mu'\lt0$ ($100{,}000$ reps):</p>
+<pre>  mu'   |  UMP-inverted  |  median-based
+ -0.20  |     0.8438     |     0.8666
+ -0.40  |     0.6465     |     0.7143
+ -0.60  |     0.4025     |     0.5116
+ -0.80  |     0.1877     |     0.3047</pre>
+<p>The UMP-inverted interval admits false values strictly less often at every $\mu'$, and the gap widens as $\mu'$ moves further from the truth (at $\mu'=-0.8$, $0.19$ versus $0.30$). This is uniform most accuracy &mdash; the interval reading of uniform most power.</p>
+</div>
+
 <h3>&sect;9.3.3 Bayesian Optimality</h3>
+
+<div class="box remark">
+<span class="label">Already proved.</span>
+The Bayesian optimality criterion is volume at fixed posterior probability, and &sect;9.2.4 settled it: the HPD set is the unique (up to null sets) minimizer, by the Neyman&ndash;Pearson pointwise argument. The structural parallel is worth pausing on &mdash; three central results in this course are the <em>same</em> one-line inequality applied to different pairs of measures:
+<table class="data">
+<tr><th>Result</th><th>Maximize</th><th>Holding fixed</th></tr>
+<tr><td>Neyman&ndash;Pearson (&sect;8.3.2)</td><td>power under $f_1$</td><td>size under $f_0$</td></tr>
+<tr><td>HPD sets (&sect;9.2.4)</td><td>posterior mass</td><td>Lebesgue volume</td></tr>
+</table>
+In both cases the optimal region is a <em>level set of a density ratio</em> ($f_1/f_0\gt k$ and $\pi/1\ge k$ respectively), and in both cases the proof is the single observation that a particular integrand is pointwise nonnegative. Recognizing that shared skeleton is worth more than memorizing either theorem.
+</div>
+
 <h3>&sect;9.3.4 Loss Function Optimality</h3>
+
+<div class="box def">
+<span class="label">Setup.</span>
+Judge an interval by a loss combining length and non-coverage. A tractable choice is
+$$L\big(\theta,[L,U]\big)=(U-L)+k\,\mathbf 1\{\theta\notin[L,U]\},$$
+so the risk is $E_\theta(U-L)+k\,P_\theta\big(\theta\notin[L,U]\big)$: expected length plus $k$ times the non-coverage probability. The constant $k$ is the exchange rate between a unit of length and a unit of error.
+</div>
+
+<div class="box thm">
+<span class="label">Example (the optimal multiplier).</span>
+For $\bar X\pm c/\sqrt n$ with $N(\mu,1)$ data and $\sigma$ known, the risk is
+$$\frac{2c}{\sqrt n}+k\big(2-2\Phi(c)\big),$$
+minimized where $\varphi(c)=\dfrac{1}{k\sqrt n}$.
+<p class="proof-label">Proof.</p>
+The length is deterministic, $2c/\sqrt n$, and the coverage is $P(|Z|\le c)=2\Phi(c)-1$, so the non-coverage is $2-2\Phi(c)$. Differentiating in $c$: $\frac{2}{\sqrt n}-2k\varphi(c)=0$. The second derivative is $-2k\varphi'(c)=2kc\varphi(c)\gt0$ for $c\gt0$, so the stationary point is the minimum (when one exists, i.e. when $1/(k\sqrt n)\lt\varphi(0)$). <span class="qed">&#8718;</span>
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; what "95%" costs</div>
+<p>$n=10$, solving $\varphi(c)=1/(k\sqrt n)$ exactly:</p>
+<pre>   k    |  optimal c  |  implied coverage  |  loss at optimum
+  2.00  |   1.3605    |      0.8263        |     1.2078
+  5.00  |   1.9193    |      0.9450        |     1.4886
+  5.41  |   1.9601    |      0.9500        |     1.5102
+ 10.00  |   2.2516    |      0.9757        |     1.6675
+ 50.00  |   2.8790    |      0.9960        |     2.0203</pre>
+<p>The conventional $c=1.96$ is the optimum for $k=5.4106$. So "use a $95\%$ interval" is the same decision as "one unit of non-coverage is worth $5.41$ units of interval length, at $n=10$" &mdash; and that exchange rate shifts with $n$, which the fixed convention ignores. Exactly as in &sect;8.3.5, the conventional choice is a hidden statement about costs.</p>
+</div>
+
+<!-- ============================= wrap ============================= -->
+<h2>Where this leaves you</h2>
+<p>The duality theorem is the whole chapter in one line: $\theta_0\in C(x)\iff x\in A(\theta_0)$. From it, every construction is a test inverted &mdash; the $t$-interval from the $t$-test, Clopper&ndash;Pearson from exact binomial tails (with the Beta identity supplied by &sect;5.4's order statistics), pivots from the invariance structure of &sect;6.4, and the $\chi^2$ interval from Theorem 5.3.1. Every optimality statement is likewise inherited: UMP tests invert to UMA intervals, and the two-sided non-existence result transfers unchanged. On the Bayesian side, HPD sets minimize volume by the same pointwise inequality that proves Neyman&ndash;Pearson.</p>
+<p>The cautionary material matters as much as the constructions. The Wald interval's minimum coverage of $0.0198$ is a live warning about trusting asymptotics at finite $n$ or extreme parameters, and the Uniform conditional-coverage example shows that "$95\%$ confidence" is an average over the sample space that can be badly unrepresentative of the sample you hold. Chapter 10 takes up the first of these directly: what the large-sample approximations actually deliver, and how fast.</p>
 
 <div class="pagenav">
   <a href="../ch08/index.html">&larr; 8. Hypothesis Testing</a>

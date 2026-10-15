@@ -21,7 +21,7 @@ Each chapter also has a **LaTeX twin** (`site/chNN/chNN.tex`) — paste into [Ov
 | 6 | Principles of Data Reduction | ✅ complete |
 | 7 | Point Estimation | ✅ complete |
 | 8 | Hypothesis Testing | ✅ complete |
-| 9 | Interval Estimation | ⬜ skeleton |
+| 9 | Interval Estimation | ✅ complete |
 | 10 | Asymptotic Evaluations | ⬜ skeleton |
 | 11 | ANOVA &amp; Regression | ⬜ skeleton |
 | 12 | Regression Models | ⬜ skeleton |
@@ -39,6 +39,7 @@ python3 simulations/sim_ch5_extra.py
 python3 simulations/sim_ch6.py
 python3 simulations/sim_ch7.py
 python3 simulations/sim_ch8.py
+python3 simulations/sim_ch9.py
 ```
 
 (No third-party dependencies — only `random`, `math`, `statistics`.)

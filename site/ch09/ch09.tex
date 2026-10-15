@@ -1,52 +1,159 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm,mathtools,booktabs,enumitem,hyperref,xcolor}
-\usepackage{tcolorbox}\tcbuselibrary{theorems}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems}
+
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{remark}[theorem]{Remark}
-\newtcolorbox{simbox}{colback=blue!4!white,colframe=blue!40!black,boxrule=0.4pt,title=Simulation Check}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtcolorbox{simbox}{colback=blue!4!white,colframe=blue!40!black,boxrule=0.4pt,arc=1pt,title=Simulation Check}
+\newtcolorbox{flagbox}{colback=yellow!8!white,colframe=orange!70!black,boxrule=0.6pt,arc=1pt,title=Flag}
+
+\DeclareMathOperator{\Var}{Var}\DeclareMathOperator{\E}{E}
+\DeclareMathOperator{\vol}{vol}
+\newcommand{\R}{\mathbb{R}}\newcommand{\ind}{\mathbf 1}
+
 \title{Casella \& Berger, Chapter 9\\[2pt]\large Interval Estimation}
 \author{Course notes}\date{}
-\begin{document}\maketitle
 
-% ===================================================================
-% NOT YET WRITTEN. Section skeleton only.
-% Fill each section with: definitions, full proofs, intuition,
-% and a simbox reporting real seeded-simulation output.
-% ===================================================================
+\begin{document}
+\maketitle
 
 \section{\S9.1 Introduction}
-% TODO
+\begin{definition}
+An interval estimator is a pair $L(X)\le U(X)$; a set estimator is a map $x\mapsto C(x)\subset\Theta$. Its coverage probability is $P_\theta(\theta\in C(X))$ and its confidence coefficient is $\inf_\theta P_\theta(\theta\in C(X))$.
+\end{definition}
+\begin{remark}
+In $P_\theta(\theta\in C(X))$ the parameter is a fixed constant and $C(X)$ is random. ``$\theta$ lies in $[0.3,0.7]$ with probability $0.95$'' is a category error once $[0.3,0.7]$ has been computed: that interval either contains $\theta$ or it does not. The $0.95$ describes the procedure. \S9.3.1 shows this is not pedantry.
+\end{remark}
+\begin{simbox}
+$t$-intervals from $N(0,1)$, $n=10$, 200k samples: coverage $0.9491$ (theory $0.9500$), mean length $1.3907$ with sd $0.3332$. Of the first 200 intervals, 14 missed (e.g.\ sample 67 gave $[-1.382,-0.187]$). Lengths vary because $S$ is random: a 95\% interval is not a fixed-width guarantee.
+\end{simbox}
 
 \section{\S9.2 Methods of Finding Interval Estimators}
-% TODO
+\subsection{\S9.2.1 Inverting a test statistic}
+\begin{theorem}[Duality]
+For each $\theta_0$ let $A(\theta_0)$ be the acceptance region of a level-$\alpha$ test of $H_0:\theta=\theta_0$, and set $C(x)=\{\theta_0:x\in A(\theta_0)\}$. Then $C(X)$ is a $1-\alpha$ confidence set. Conversely $A(\theta_0)=\{x:\theta_0\in C(x)\}$ is the acceptance region of a level-$\alpha$ test.
+\end{theorem}
+\begin{proof}
+The content is the built-in equivalence $\theta_0\in C(x)\iff x\in A(\theta_0)$. At the true $\theta$,
+\[P_\theta(\theta\in C(X))=P_\theta(X\in A(\theta))=1-P_\theta(\text{reject a true }H_0)\ge1-\alpha.\]
+Reading the equivalence in the other direction gives the converse.
+\end{proof}
+\begin{remark}
+The recipe: solve the acceptance inequality for the parameter rather than the data. Accepting $H_0:\mu=\mu_0$ iff $|(\bar x-\mu_0)/(s/\sqrt n)|\le t_{1-\alpha/2,n-1}$ rearranges to $\bar x\pm t_{1-\alpha/2,n-1}s/\sqrt n$. $A(\theta_0)$ and $C(x)$ are perpendicular slices of one subset of $\mathcal X\times\Theta$. Inverted sets need not be intervals, or even non-empty --- the Fieller interval for a ratio of normal means can be the complement of a bounded interval. Coverage is still correct; interpretability is separate.
+\end{remark}
+\begin{simbox}
+Endpoints from solving the acceptance inequality versus the closed-form $t$-interval over 50k samples: max discrepancy $0.000\times10^{0}$. Grid check on one sample: 0 of 4001 grid points disagree between ``the test accepts $\mu_0$'' and ``$\mu_0$ is in the interval''.
+\end{simbox}
 
-\subsection{\S9.2.1 Inverting a Test Statistic}
-% TODO
-
-\subsection{\S9.2.2 Pivotal Quantities}
-% TODO
+\subsection{\S9.2.2 Pivotal quantities}
+\begin{definition}
+$Q(X,\theta)$ is a pivot if the law of $Q(X,\theta)$ under $P_\theta$ is the same for every $\theta$.
+\end{definition}
+\begin{proposition}
+If $Q$ is a pivot and $P(a\le Q\le b)=1-\alpha$, then $C(x)=\{\theta:a\le Q(x,\theta)\le b\}$ is a $1-\alpha$ confidence set.
+\end{proposition}
+\begin{proof}
+$P_\theta(\theta\in C(X))=P_\theta(a\le Q(X,\theta)\le b)=1-\alpha$, since that probability is the same for all $\theta$.
+\end{proof}
+\begin{remark}
+Pivots are the invariance structure of \S6.4 reused: in a location family $\bar X-\theta$ is a pivot, in a scale family $S/\sigma$ is, and in a location-scale family $(\bar X-\mu)/S$ is --- Theorem 5.3.1 is exactly the statement that this pivot has the $t_{n-1}$ law. Equal tails is a convention: for a skewed pivot such as $\chi^2_{n-1}$ it is not shortest. The shortest interval $[SS/b,SS/a]$ minimizes $1/a-1/b$ subject to $F(b)-F(a)=1-\alpha$.
+\end{remark}
+\begin{simbox}
+$N(0,4)$, $n=10$, 200k samples. Equal-tailed ($\chi^2_{0.025,9}=2.7004$, $\chi^2_{0.975,9}=19.0228$): coverage $0.9499$, mean length $11.4618$. Shortest of that form (lower tail mass $0.0474$, $a=3.2715$, $b=25.4096$): coverage $0.9507$, mean length $9.6007$ --- 16.2\% shorter at the same coverage.
+\end{simbox}
 
 \subsection{\S9.2.3 Pivoting the CDF}
-% TODO
+\begin{theorem}[Continuous, monotone case]
+Let $F(t\mid\theta)$ be continuous in $t$ and strictly decreasing in $\theta$, and let $\alpha_1+\alpha_2=\alpha$. Define $\theta_U(t),\theta_L(t)$ by $F(t\mid\theta_U)=\alpha_1$ and $F(t\mid\theta_L)=1-\alpha_2$. Then $[\theta_L(T),\theta_U(T)]$ is a $1-\alpha$ interval.
+\end{theorem}
+\begin{proof}
+Monotonicity gives $\theta>\theta_U(t)\iff F(t\mid\theta)<\alpha_1$ and $\theta<\theta_L(t)\iff F(t\mid\theta)>1-\alpha_2$. By the probability integral transform (\S5.6.1), continuity makes $F(T\mid\theta)\sim\mathrm{Uniform}(0,1)$, so the two tail probabilities are exactly $\alpha_1$ and $\alpha_2$.
+\end{proof}
+\begin{theorem}[Discrete case; Clopper--Pearson]
+With atoms, $P_\theta(F(T\mid\theta)\le u)\le u$, so the construction gives coverage $\ge1-\alpha$: valid but conservative. For $X\sim\mathrm{Binomial}(n,p)$, solving $P(X\ge x\mid p_L)=\alpha/2$ and $P(X\le x\mid p_U)=\alpha/2$ gives
+\[p_L=B^{-1}_{\alpha/2}(x,n-x+1),\qquad p_U=B^{-1}_{1-\alpha/2}(x+1,n-x).\]
+\end{theorem}
+\begin{proof}
+The needed identity is $P(\mathrm{Bin}(n,p)\ge x)=P(\mathrm{Beta}(x,n-x+1)\le p)$, and \S5.4 supplies it: for iid uniforms, $\{\mathrm{Bin}(n,p)\ge x\}=\{U_{(x)}\le p\}$ because at least $x$ of the $n$ uniforms fall below $p$ exactly when the $x$-th order statistic does, and $U_{(x)}\sim\mathrm{Beta}(x,n-x+1)$.
+\end{proof}
+\begin{simbox}
+Exponential scale $\theta=3$, $n=10$: interval $[T/17.0848,\,T/4.7954]$ has coverage $0.9502$ (theory $0.9500$).\\
+Clopper--Pearson, $n=20$: $x=0\to[0,0.1684]$; $x=1\to[0.0013,0.2487]$; $x=5\to[0.0866,0.4910]$; $x=10\to[0.2720,0.7280]$; $x=20\to[0.8316,1]$. Zero successes in twenty trials licenses $p\le0.168$, not $p=0$.
+\end{simbox}
 
-\subsection{\S9.2.4 Bayesian Intervals}
-% TODO
+\subsection{\S9.2.4 Bayesian intervals}
+\begin{definition}
+A $1-\alpha$ credible set satisfies $P(\theta\in C\mid x)\ge1-\alpha$: a probability statement about $\theta$ given the data, which a confidence set does not license.
+\end{definition}
+\begin{theorem}[HPD sets minimize volume]
+With a posterior density $\pi(\cdot\mid x)$, let $C^*=\{\theta:\pi(\theta\mid x)\ge k\}$ with $k$ chosen so $P(\theta\in C^*\mid x)=1-\alpha$. Then $C^*$ minimizes volume among sets of posterior probability $\ge1-\alpha$.
+\end{theorem}
+\begin{proof}
+The Neyman--Pearson argument with the two measures swapped. For any competitor $C$,
+\[(\ind_{C^*}(\theta)-\ind_C(\theta))(\pi(\theta\mid x)-k)\ \ge\ 0\quad\text{pointwise},\]
+since where $\pi\ge k$ we have $\ind_{C^*}=1\ge\ind_C$ and the second factor is $\ge0$, and where $\pi<k$ the signs both flip. Integrating,
+\[0\ \ge\ \int_{C^*}\pi-\int_C\pi\ \ge\ k\big[\vol(C^*)-\vol(C)\big],\]
+and $k>0$ forces $\vol(C^*)\le\vol(C)$.
+\end{proof}
+Consequently the HPD interval has equal posterior density at its endpoints, its boundary being a level set of $\pi$.
+\begin{simbox}
+$\mathrm{Gamma}(5,\text{rate }6)$ posterior (the \S7.3.4 example): equal-tailed $[0.2706,1.7069]$ length $1.4364$; HPD $[0.2012,1.5717]$ length $1.3705$, 4.58\% shorter, with endpoint densities $0.15868$ and $0.15868$ --- equal, as the theorem requires.\\
+Exact frequentist coverage of the 95\% Jeffreys $\mathrm{Beta}(\frac12,\frac12)$ credible interval, $n=20$: $0.9401,0.9841,0.9568,0.9348,0.9586$ at $p=0.02,0.05,0.10,0.25,0.50$; over a grid, min $0.8937$, mean $0.9510$. Credible and confidence are different guarantees.
+\end{simbox}
 
 \section{\S9.3 Methods of Evaluating Interval Estimators}
-% TODO
+\subsection{\S9.3.1 Size and coverage probability}
+Coverage and length pull against each other ($\Theta$ has coverage 1 and infinite length; a point has length 0 and coverage 0), so one fixes coverage and minimizes length, volume, or false coverage.
+\begin{simbox}
+Exact coverage (summation, no Monte Carlo error) of three binomial intervals, $n=20$, nominal 95\%. At $p=0.02,0.05,0.10,0.20,0.35,0.50$: Wald $0.3318,0.6389,0.8760,0.9208,0.9360,0.9586$; Wilson $0.9401,0.9245,0.9568,0.9563,0.9683,0.9586$; Clopper--Pearson $0.9929,0.9841,0.9887,0.9785,0.9683,0.9586$. Over a grid in $(0.001,0.999)$: Wald min $0.0198$, mean $0.8467$, mean length $0.3243$; Wilson min $0.8516$, mean $0.9532$, length $0.3255$; Clopper--Pearson min $0.9581$, mean $0.9770$, length $0.3663$. The Wald failure mechanism is visible at $x=0$ or $n$, where $\hat p(1-\hat p)=0$ collapses the interval to a point.
+\end{simbox}
+\begin{remark}[Coverage averages over samples you did not observe]
+For $\mathrm{Uniform}(\theta,\theta+1)$ with $n=5$, $R=X_{(n)}-X_{(1)}$ is ancillary and Chapter 6 showed the midpoint error given $R=r$ is $\mathrm{Uniform}(\pm\frac{1-r}2)$, so the conditional coverage of $\hat\theta\pm c$ is exactly $\min\{1,2c/(1-r)\}$.
+\end{remark}
+\begin{simbox}
+$c=0.22536$ gives 95\% unconditional coverage; conditional coverage is exactly 1 once $r\ge1-2c=0.5493$. By $R$-bin (300k samples), share of samples / conditional coverage / exact bin-averaged theory: $[0,0.30)$: $0.0306$ / $0.5945$ / $0.5931$; $[0.30,0.5493)$: $0.2242$ / $0.8330$ / $0.8330$; $[0.5493,0.78)$: $0.4408$ / $1.0000$ / $1.0000$; $[0.78,1)$: $0.3043$ / $1.0000$ / $1.0000$. So 74.5\% of the time the ``95\%'' interval is certain to cover and 3\% of the time it covers with probability $0.59$ --- and $R$ tells you which.
+\end{simbox}
+\begin{flagbox}
+This is the ``relevant subsets'' critique (Fisher's conditionality arguments; the Buehler/Robinson literature). It is presented because it is exactly computable, not as a refutation. The frequentist responses are real: condition on the ancillary, as \S6.3's conditionality principle recommends, or note that such dramatic recognizable subsets are rare in practice. This page does not settle it.
+\end{flagbox}
 
-\subsection{\S9.3.1 Size and Coverage Probability}
-% TODO
+\subsection{\S9.3.2 Test-related optimality}
+\begin{definition}
+The false coverage probability is $P_\theta(\theta'\in C(X))$ for $\theta'\ne\theta$. A $1-\alpha$ set is uniformly most accurate (UMA) if it minimizes this simultaneously in $\theta$.
+\end{definition}
+\begin{theorem}
+Minimizing $P_\theta(\theta'\in C(X))$ over $1-\alpha$ sets is the same problem as maximizing the power at $\theta$ of a level-$\alpha$ test of $H_0:\theta=\theta'$. Hence inverting UMP tests yields a UMA set.
+\end{theorem}
+\begin{proof}
+By duality $A(\theta')=\{x:\theta'\in C(x)\}$ is a level-$\alpha$ acceptance region with power $\beta_{\theta'}(\theta)=1-P_\theta(X\in A(\theta'))$, so $P_\theta(\theta'\in C(X))=1-\beta_{\theta'}(\theta)$. Minimizing the left side is maximizing the power. A UMP test maximizes it at every $\theta$ at once.
+\end{proof}
+\begin{remark}
+Karlin--Rubin therefore makes one-sided bounds UMA in MLR families, and the two-sided obstruction transfers verbatim: no UMP two-sided test (\S8.3.2) means no UMA two-sided interval. The repair is also inherited --- restrict to unbiased or equivariant procedures.
+\end{remark}
+\begin{simbox}
+One-sided 95\% lower bounds, $\sigma$ known, $n=10$, true $\mu=0$: UMP-inverted $\bar X-0.5201$ versus a calibrated median-based bound. False coverage $P(\mu'\in C)$: at $\mu'=-0.2$, $0.8438$ vs $0.8666$; at $-0.4$, $0.6465$ vs $0.7143$; at $-0.6$, $0.4025$ vs $0.5116$; at $-0.8$, $0.1877$ vs $0.3047$. Uniform dominance, widening with distance.
+\end{simbox}
 
-\subsection{\S9.3.2 Test-Related Optimality}
-% TODO
+\subsection{\S9.3.3 Bayesian optimality}
+Already settled in \S9.2.4: HPD minimizes volume at fixed posterior probability. Note the shared skeleton with Neyman--Pearson: in both, the optimal region is a level set of a density ratio and the proof is that one integrand is pointwise nonnegative. NP maximizes power under $f_1$ holding size under $f_0$; HPD maximizes posterior mass holding Lebesgue volume.
 
-\subsection{\S9.3.3 Bayesian Optimality}
-% TODO
+\subsection{\S9.3.4 Loss function optimality}
+Take $L(\theta,[L,U])=(U-L)+k\ind\{\theta\notin[L,U]\}$, so the risk is expected length plus $k$ times non-coverage.
+\begin{theorem}
+For $\bar X\pm c/\sqrt n$ with $\sigma$ known, the risk $\frac{2c}{\sqrt n}+k(2-2\Phi(c))$ is minimized where $\varphi(c)=1/(k\sqrt n)$.
+\end{theorem}
+\begin{proof}
+Length is deterministic and coverage is $2\Phi(c)-1$. Differentiating, $2/\sqrt n-2k\varphi(c)=0$; the second derivative $2kc\varphi(c)>0$ for $c>0$, so the stationary point is the minimum when $1/(k\sqrt n)<\varphi(0)$.
+\end{proof}
+\begin{simbox}
+$n=10$: optimal $c=1.3605,\,1.9193,\,1.9601,\,2.2516,\,2.8790$ with implied coverage $0.8263,\,0.9450,\,0.9500,\,0.9757,\,0.9960$ for $k=2,\,5,\,5.41,\,10,\,50$. The conventional $c=1.96$ is optimal exactly at $k=5.4106$: ``use a 95\% interval'' prices one unit of non-coverage at $5.41$ units of length, at this $n$.
+\end{simbox}
 
-\subsection{\S9.3.4 Loss Function Optimality}
-% TODO
+\section*{Where this leaves you}
+The duality $\theta_0\in C(x)\iff x\in A(\theta_0)$ is the chapter. Every construction is an inverted test: the $t$-interval from the $t$-test, Clopper--Pearson from exact binomial tails via \S5.4's order statistics, pivots from \S6.4's invariance, the $\chi^2$ interval from Theorem 5.3.1. Every optimality statement is inherited: UMP inverts to UMA, and two-sided non-existence transfers unchanged. HPD sets minimize volume by the same inequality that proves Neyman--Pearson. The cautionary material matters equally: the Wald interval's minimum coverage of $0.0198$ warns against trusting asymptotics at finite $n$ or extreme parameters, and the Uniform example shows 95\% confidence can be an average badly unrepresentative of the sample in hand.
 
 \end{document}
