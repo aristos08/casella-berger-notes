@@ -1,0 +1,81 @@
+
+========================================================================
+6.2.1(a) SUFFICIENCY: Bernoulli. Conditional law of X given T=sum is free of p
+========================================================================
+p=0.2: P(T=2) empirical=0.1541  theory=0.1536;  conditional freq of each of the 6 arrangements (theory 1/6=0.1667):
+   1100:0.1682  1010:0.1661  1001:0.1668  0110:0.1658  0101:0.1668  0011:0.1662
+p=0.7: P(T=2) empirical=0.2636  theory=0.2646;  conditional freq of each of the 6 arrangements (theory 1/6=0.1667):
+   1100:0.1673  1010:0.1671  1001:0.1675  0110:0.1652  0101:0.1669  0011:0.1659
+
+========================================================================
+6.2.1(b) SUFFICIENCY AS REGENERATION: Normal(mu,1), n=11, regenerate data from T
+========================================================================
+  (theory for the true sample: Var(X1)=1, E[X1*X2]=mu^2=9.0)
+  original sample X                  Var(X1)=1.0076  E[max]=4.5872  sd[max]=0.5762  E[X1*X2]=8.9845
+  regenerated from Xbar (sufficient) Var(X1)=1.0004  E[max]=4.5881  sd[max]=0.5782  E[X1*X2]=8.9953
+  regenerated from median (NOT suff.) Var(X1)=1.0925  E[max]=4.5876  sd[max]=0.7019  E[X1*X2]=9.0851
+
+========================================================================
+6.2.3 ANCILLARITY: Uniform(theta, theta+1), n=5. Range R is ancillary
+========================================================================
+  theta=    0.0: E[R]=0.6669 (theory (n-1)/(n+1)=0.6667)  q10=0.4169  q50=0.6867  q90=0.8876
+  theta=   10.0: E[R]=0.6663 (theory (n-1)/(n+1)=0.6667)  q10=0.4152  q50=0.6861  q90=0.8881
+  theta= 1000.0: E[R]=0.6661 (theory (n-1)/(n+1)=0.6667)  q10=0.4158  q50=0.6861  q90=0.8871
+
+========================================================================
+6.2.3 ... but the ancillary R measures PRECISION. Midpoint estimator, conditional on R
+========================================================================
+  overall MSE = 0.01194   theory E[(1-R)^2]/12 = 1/84 = 0.01190
+  R-bin        count    empirical cond. MSE    mean of (1-R)^2/12
+  [0.0,0.4)     34718      0.03986            0.03955
+  [0.4,0.6)     99981      0.02009            0.02003
+  [0.6,0.8)    160217      0.00765            0.00764
+  [0.8,0.9)     72179      0.00201            0.00201
+  [0.9,1.0)     32905      0.00040            0.00040
+
+========================================================================
+6.2.4 NOT COMPLETE: g(T)=R-(n-1)/(n+1) has mean 0 for every theta, yet is not 0
+========================================================================
+  theta=   -3.0: E[g(T)] = -0.00017   sd[g(T)] = 0.1776  (nonzero spread)
+  theta=    0.0: E[g(T)] = -0.00001   sd[g(T)] = 0.1782  (nonzero spread)
+  theta=    2.5: E[g(T)] = -0.00000   sd[g(T)] = 0.1783  (nonzero spread)
+  theta=  100.0: E[g(T)] = -0.00045   sd[g(T)] = 0.1782  (nonzero spread)
+
+========================================================================
+6.2.4 BASU: Exponential(scale theta), n=5. T=sum is complete sufficient; W=X1/T ancillary
+========================================================================
+  theta=1.0: E[W]=0.2004 (Beta(1,4): 0.2000)  Var[W]=0.02681 (0.02667)
+     corr(W,T)=-0.0024   corr(W^2,log T)=-0.0019
+     E[W  | T quartile 1..4] = 0.2008  0.2010  0.2002  0.1994   <- flat: independent of T
+     E[X1 | T quartile 1..4] = 0.5024  0.8067  1.0845  1.6050   <- NOT flat: X1 is not ancillary
+  theta=5.0: E[W]=0.1999 (Beta(1,4): 0.2000)  Var[W]=0.02659 (0.02667)
+     corr(W,T)=+0.0041   corr(W^2,log T)=+0.0038
+     E[W  | T quartile 1..4] = 0.1989  0.1992  0.2010  0.2004   <- flat: independent of T
+     E[X1 | T quartile 1..4] = 2.4946  3.9990  5.4502  8.0623   <- NOT flat: X1 is not ancillary
+
+========================================================================
+6.3 LIKELIHOOD PRINCIPLE: 9 successes, 3 failures; H0: p=1/2 vs H1: p>1/2
+========================================================================
+  Design A (n=12 fixed, Binomial):            one-sided p-value = 0.07300
+  Design B (sample until 3rd failure, NegBin): one-sided p-value = 0.03271
+  Likelihood ratio L_bin(p)/L_nb(p) at several p (should be the constant C(12,9)/C(11,2)=4):
+     p=0.10:  L_bin=0.000000  L_nb=0.000000  ratio=4.0000
+     p=0.30:  L_bin=0.001485  L_nb=0.000371  ratio=4.0000
+     p=0.50:  L_bin=0.053711  L_nb=0.013428  ratio=4.0000
+     p=0.75:  L_bin=0.258104  L_nb=0.064526  ratio=4.0000
+     p=0.90:  L_bin=0.085233  L_nb=0.021308  ratio=4.0000
+
+========================================================================
+6.3 STOPPING RULES: type I error of a nominal 5% z-test under 'peeking' (H0 true, N(0,1) data)
+========================================================================
+  one look at n=100:               P(reject) = 0.0499
+  10 equally spaced looks (10..100): P(reject) = 0.1958
+  100 looks (after every obs):       P(reject) = 0.3745
+
+========================================================================
+6.4 EQUIVARIANCE: N(theta,1), n=10. MSE of equivariant vs non-equivariant estimators
+========================================================================
+  theta   MSE[mean]   MSE[median]   MSE[0.8*mean] (not equivariant)   theory MSE[0.8*mean]=0.064+(0.2*theta)^2
+    0.0   0.0996      0.1371        0.0637                          0.0640
+    1.0   0.1002      0.1384        0.1050                          0.1040
+    5.0   0.1000      0.1383        1.0631                          1.0640

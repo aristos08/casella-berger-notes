@@ -5,14 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ch.6 Principles of Data Reduction &mdash; C&amp;B Course Notes</title>
 <link rel="stylesheet" href="../assets/style.css">
-<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']],tags:'none'}};</script>
+<script>
+MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']], tags: 'none' } };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
 <nav class="topnav">
   <a class="brand" href="../index.html">C&amp;B</a>
   <a class="chip done" href="../ch05/index.html">5</a>
-  <a class="chip current" href="../ch06/index.html">6</a>
+  <a class="chip current done" href="../ch06/index.html">6</a>
   <a class="chip" href="../ch07/index.html">7</a>
   <a class="chip" href="../ch08/index.html">8</a>
   <a class="chip" href="../ch09/index.html">9</a>
@@ -22,21 +24,405 @@
 </nav>
 <main>
 <h1>Chapter 6 &mdash; Principles of Data Reduction
-<span class="subtitle">Sufficiency, minimal sufficiency, ancillarity, completeness, and the likelihood &amp; equivariance principles</span>
+<span class="subtitle">Sufficiency, ancillarity, completeness, the likelihood principle, and equivariance</span>
 </h1>
 
-<div class="todo-banner"><strong>Not yet written.</strong> This chapter is scaffolded with its full section structure. Prompt &ldquo;do chapter 6&rdquo; (or specific sections) and the content &mdash; proofs, intuition, and seeded simulations &mdash; drops in here at the Chapter 5 standard.</div>
+<p class="lead">Chapter 5 asked what a statistic's distribution looks like. Chapter 6 asks which statistics are <em>worth computing</em>: when can we throw data away without losing anything about $\theta$, what must we keep, and what constraints should a sensible procedure respect?</p>
 
+<!-- ============================= 6.1 ============================= -->
 <h2>&sect;6.1 Introduction</h2>
+
+<p>A statistic $T$ partitions the sample space: $A_t=\{x:T(x)=t\}$. An analyst who reports only $T(x)=t$ has forgotten <em>which</em> point of $A_t$ occurred. In measure-theoretic terms, $T$ is a measurable map and reducing the data to $T$ means retaining only the sub-$\sigma$-algebra $\sigma(T)\subset\mathcal B^n$. Three principles say when that forgetting is harmless or required:</p>
+<ul>
+<li><strong>Sufficiency principle.</strong> Compress to a statistic that loses no information about $\theta$.</li>
+<li><strong>Likelihood principle.</strong> The data affect inference about $\theta$ only through the likelihood function.</li>
+<li><strong>Equivariance principle.</strong> A procedure should respect the symmetries of the problem (units, shifts, relabelings).</li>
+</ul>
+
+<div class="box remark">
+<span class="label">Why this matters.</span>
+Every running total, rollup table, or fixed-size feature vector computed from a stream is a data-reduction decision. Sufficiency tells you exactly when that is lossless <em>under a given model</em> (and the qualifier matters: see the A/B-test caveat in &sect;6.2.1). Ancillarity and the likelihood principle explain why the "right" reference set for an error rate is sometimes the experiment you actually ran rather than the one you imagined. Equivariance explains why a method should not depend on whether you measured in meters or feet.
+</div>
+
+<!-- ============================= 6.2 ============================= -->
 <h2>&sect;6.2 The Sufficiency Principle</h2>
+
 <h3>&sect;6.2.1 Sufficient Statistics</h3>
+
+<div class="box def">
+<span class="label">Definition (sufficiency).</span>
+A statistic $T(X)$ is <em>sufficient for $\theta$</em> if the conditional distribution of $X$ given $T(X)$ does not depend on $\theta$. Precisely: there is a Markov kernel $Q(B\mid t)$ such that, for every $\theta$ and Borel $B$, $Q(B\mid T)$ is a version of $P_\theta(X\in B\mid T)$. (On Borel spaces regular conditional distributions exist, so the kernel is not an extra assumption.)
+</div>
+
+<p><strong>Discrete criterion.</strong> If $X$ is discrete and $q(t\mid\theta)=P_\theta(T=t)$, then $P_\theta(X=x\mid T=T(x))=\dfrac{p(x\mid\theta)}{q(T(x)\mid\theta)}$. So $T$ is sufficient iff this ratio is free of $\theta$ for every $x$.</p>
+
+<div class="box thm">
+<span class="label">Factorization Theorem.</span>
+Let $X$ have pmf/pdf $f(x\mid\theta)$. $T(X)$ is sufficient for $\theta$ iff there exist functions $g(t\mid\theta)$ and $h(x)$ with
+$$f(x\mid\theta)=g\big(T(x)\mid\theta\big)\,h(x)\qquad\text{for all }x,\theta .$$
+<p class="proof-label">Proof (discrete case).</p>
+($\Rightarrow$) Suppose $T$ is sufficient. Put $g(t\mid\theta)=P_\theta(T=t)$ and $h(x)=P(X=x\mid T=T(x))$, which is free of $\theta$. Then $p(x\mid\theta)=P_\theta(T=T(x))\,P(X=x\mid T=T(x))=g(T(x)\mid\theta)h(x)$.
+($\Leftarrow$) Suppose $p(x\mid\theta)=g(T(x)\mid\theta)h(x)$. Then $q(t\mid\theta)=\sum_{x:T(x)=t}p(x\mid\theta)=g(t\mid\theta)\sum_{x:T(x)=t}h(x)$, so
+$$\frac{p(x\mid\theta)}{q(T(x)\mid\theta)}=\frac{h(x)}{\sum_{y:T(y)=T(x)}h(y)},$$
+which does not involve $\theta$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">The general (measure-theoretic) statement.</span>
+For a family $\{P_\theta\}$ dominated by a $\sigma$-finite measure $\mu$, the same equivalence holds with $f=dP_\theta/d\mu$ (Halmos&ndash;Savage, 1949). The proof reduces to the discrete one using the fact that a dominated family is equivalent to a countable convex combination $P^*=\sum_i c_iP_{\theta_i}$, so that $\frac{dP_\theta}{dP^*}$ is $\sigma(T)$-measurable exactly when $T$ is sufficient. See Lehmann&ndash;Romano, <em>Testing Statistical Hypotheses</em>, &sect;2.6. For densities in practice, "$f(x\mid\theta)=g(T(x)\mid\theta)h(x)$" is all you need.
+</div>
+
+<h3>Examples</h3>
+<ul>
+<li><strong>Bernoulli($\theta$).</strong> $f(x\mid\theta)=\theta^{t}(1-\theta)^{n-t}\cdot1$ with $t=\sum x_i$, so $T=\sum X_i$.</li>
+<li><strong>$N(\mu,\sigma^2)$, $\sigma^2$ known.</strong> Using $\sum(x_i-\mu)^2=\sum(x_i-\bar x)^2+n(\bar x-\mu)^2$,
+$$\begin{aligned}f(x\mid\mu)&=\underbrace{e^{-n(\bar x-\mu)^2/(2\sigma^2)}}_{g(\bar x\mid\mu)}\\ &\quad\times\underbrace{(2\pi\sigma^2)^{-n/2}e^{-\sum(x_i-\bar x)^2/(2\sigma^2)}}_{h(x)},\end{aligned}$$
+so $\bar X$ is sufficient. With $\sigma^2$ also unknown, the same identity gives $(\bar X,S^2)$.</li>
+<li><strong>Uniform$(0,\theta)$.</strong> $f(x\mid\theta)=\theta^{-n}\mathbf 1\{x_{(n)}\le\theta\}\cdot\mathbf 1\{x_{(1)}\ge0\}$, so $X_{(n)}$ is sufficient. The support depends on $\theta$, so this is not an exponential family.</li>
+<li><strong>Exponential families.</strong> If $f(x\mid\theta)=h(x)c(\theta)\exp\{\sum_{i=1}^kw_i(\theta)t_i(x)\}$, then for an iid sample the vector $\big(\sum_jt_1(X_j),\dots,\sum_jt_k(X_j)\big)$ is sufficient, by factorization: $c(\theta)^n\exp\{\sum_iw_i(\theta)T_i\}\cdot\prod_jh(x_j)$.</li>
+<li><strong>The whole sample, or its order statistics.</strong> $T(X)=X$ is trivially sufficient; for iid data the order statistics are too, because $\prod f(x_i)=\prod f(x_{(i)})$.</li>
+</ul>
+
+<div class="box remark">
+<span class="label">Two structural facts.</span>
+(i) Sufficiency is not unique: any bijective function of a sufficient statistic is sufficient. (ii) If $T=r(S)$ and $T$ is sufficient, then $S$ is sufficient (take $g(r(S(x))\mid\theta)$ in the factorization). So sufficiency is inherited by <em>finer</em> statistics, and the interesting question is how coarse one can go (&sect;6.2.2).
+</div>
+
+<h3>Sufficiency means you can regenerate the data</h3>
+
+<div class="box thm">
+<span class="label">Proposition (regeneration).</span>
+Let $T$ be sufficient with $\theta$-free kernel $Q(\cdot\mid t)$. Draw $X\sim P_\theta$, compute $T(X)$, then draw $X'\sim Q(\cdot\mid T(X))$ using fresh randomness. Then $X'\sim P_\theta$ for every $\theta$.
+<p class="proof-label">Proof.</p>
+$P(X'\in B)=E_\theta\big[Q(B\mid T)\big]=E_\theta\big[P_\theta(X\in B\mid T)\big]=P_\theta(X\in B)$. <span class="qed">&#8718;</span>
+</div>
+
+<p>Interpretation: a statistician holding only $T$ can manufacture a synthetic data set indistinguishable in law from the real one. Any procedure that uses all of $X$ can be matched in distribution by one that uses only $T$ plus an independent coin. This is the engine behind Rao&ndash;Blackwell (Chapter 7).</p>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the conditional law is free of $p$</div>
+<p>Bernoulli$(p)$, $n=4$, $T=\sum X_i$. Among samples with $T=2$ there are $6$ arrangements; sufficiency says each has conditional probability $1/6$ regardless of $p$ ($600{,}000$ draws per $p$):</p>
+<pre>p=0.2: P(T=2) = 0.1541 (th. 0.1536)
+   1100:0.1682  1010:0.1661  1001:0.1668  0110:0.1658  0101:0.1668  0011:0.1662
+p=0.7: P(T=2) = 0.2636 (th. 0.2646)
+   1100:0.1673  1010:0.1671  1001:0.1675  0110:0.1652  0101:0.1669  0011:0.1659</pre>
+<p>Different $p$ give very different $P(T=2)$ but the same conditional distribution over arrangements.</p>
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; regeneration from $\bar X$ works, from the median fails</div>
+<p>$N(3,1)$, $n=11$. Regenerate from the sufficient $\bar X$ via $X'=\bar X+(Z-\bar Z)$ with fresh $Z_i\sim N(0,1)$ (the conditional law of $X$ given $\bar X$). As a wrong control, regenerate from the sample median $m$ via $X''=m+(Z-\mathrm{med}(Z))$ ($120{,}000$ reps):</p>
+<pre>                                     Var(X1)   E[max]   sd[max]   E[X1*X2]
+original sample X                     1.0076    4.5872   0.5762     8.9845
+regenerated from Xbar (sufficient)    1.0004    4.5881   0.5782     8.9953
+regenerated from median (NOT suff.)   1.0925    4.5876   0.7019     9.0851</pre>
+<p>The $\bar X$-based copy is indistinguishable from the real data; the median-based copy visibly has the wrong spread (variance $1.09$ vs $1$, sd of the maximum $0.70$ vs $0.58$) because the median has thrown away information the sample carried.</p>
+</div>
+
+<div class="box remark">
+<span class="label">Real-world: what sufficiency does and does not license.</span>
+In a randomized A/B test with a Bernoulli conversion outcome, $(n,\sum x_i)$ is sufficient for the conversion rate: the click-by-click log adds nothing <em>if the iid Bernoulli model is right</em>. That qualifier is the whole story. If conversion drifts with time (novelty effects), or users repeat, the order, timestamps and covariates are no longer irrelevant. Sufficiency is a property of a statistic <em>relative to a model</em>, not of the data. A related theorem (Pitman&ndash;Koopman&ndash;Darmois) says that, under regularity (support not depending on $\theta$), only exponential families admit a sufficient statistic whose dimension stays bounded as $n$ grows. That is why Gaussian, Poisson, and logistic-regression models can be fit from fixed-size summaries, while Cauchy or Uniform$(0,\theta)$-type models cannot.
+</div>
+
 <h3>&sect;6.2.2 Minimal Sufficient Statistics</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+A sufficient statistic $T$ is <em>minimal sufficient</em> if for every sufficient statistic $S$ there is a function $r$ with $T=r(S)$. It is the coarsest sufficient partition: the maximal lossless compression of the data.
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (criterion for minimal sufficiency).</span>
+Let $f(x\mid\theta)\gt0$ (for simplicity) and suppose $T$ satisfies: for all $x,y$,
+$$\frac{f(x\mid\theta)}{f(y\mid\theta)}\ \text{is constant in }\theta\quad\Longleftrightarrow\quad T(x)=T(y).$$
+Then $T$ is minimal sufficient.
+<p class="proof-label">Proof.</p>
+<em>Sufficiency.</em> Choose one representative $x_t$ from each fiber $\{T=t\}$. For any $x$, $T(x_{T(x)})=T(x)$, so by the ($\Leftarrow$) hypothesis the ratio $f(x\mid\theta)/f(x_{T(x)}\mid\theta)=:h(x)$ is free of $\theta$. Then $f(x\mid\theta)=f(x_{T(x)}\mid\theta)\,h(x)=g(T(x)\mid\theta)h(x)$, a factorization.
+<em>Minimality.</em> Let $S$ be any sufficient statistic: $f(x\mid\theta)=g'(S(x)\mid\theta)h'(x)$. If $S(x)=S(y)$ then $f(x\mid\theta)/f(y\mid\theta)=h'(x)/h'(y)$ is free of $\theta$, so $T(x)=T(y)$ by the ($\Rightarrow$) hypothesis. Hence $T$ is constant on the fibers of $S$, i.e. a function of $S$. <span class="qed">&#8718;</span>
+</div>
+
+<h3>Examples</h3>
+<ul>
+<li><strong>$N(\mu,\sigma^2)$, both unknown.</strong> Using the sum-of-squares identity,
+$$\begin{aligned}\frac{f(x\mid\mu,\sigma^2)}{f(y\mid\mu,\sigma^2)}=\exp\Big\{-\frac{1}{2\sigma^2}\Big[&n(\bar x^2-\bar y^2)-2n\mu(\bar x-\bar y)\\ &+(n-1)(s_x^2-s_y^2)\Big]\Big\}.\end{aligned}$$
+This is constant in $\mu$ iff $\bar x=\bar y$, and then constant in $\sigma^2$ iff $s_x^2=s_y^2$. So $(\bar X,S^2)$ is minimal sufficient.</li>
+<li><strong>Uniform$(\theta,\theta+1)$.</strong> The likelihood is $\mathbf 1\{x_{(n)}-1\lt\theta\lt x_{(1)}\}$, the indicator of an interval. Two samples give proportional likelihoods iff they give the same interval, so $(X_{(1)},X_{(n)})$ is minimal sufficient: a <em>two</em>-dimensional statistic for a one-dimensional parameter.</li>
+<li><strong>Cauchy location.</strong> The ratio $\prod_i\frac{1+(y_i-\theta)^2}{1+(x_i-\theta)^2}$ is a ratio of monic polynomials in $\theta$ of degree $2n$, constant iff the multisets $\{x_i\}$ and $\{y_i\}$ agree (compare roots $y_i\pm\mathrm i$ and $x_i\pm\mathrm i$). The order statistics are minimal sufficient: no reduction beyond sorting.</li>
+</ul>
+
+<div class="box remark">
+<span class="label">Intuition.</span>
+The criterion says: group two data sets together exactly when their likelihood functions have the same <em>shape</em> in $\theta$. The minimal sufficient statistic is "the likelihood function up to a constant". This idea reappears as the likelihood principle in &sect;6.3.
+</div>
+
 <h3>&sect;6.2.3 Ancillary Statistics</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+A statistic $S(X)$ is <em>ancillary</em> for $\theta$ if its distribution does not depend on $\theta$.
+</div>
+
+<div class="box thm">
+<span class="label">Proposition (location and scale families).</span>
+(a) Let $X_i=\theta+Z_i$ with $Z_i$ iid from a fixed law. Any statistic with $W(x+c\mathbf 1)=W(x)$ for all $c$ (translation invariant) is ancillary: the range, $S^2$, the residuals $X_i-\bar X$. (b) Let $X_i=\sigma Z_i$. Any $W$ with $W(cx)=W(x)$ for all $c\gt0$ (scale invariant) is ancillary: $X_1/X_2$, $X_1/\sum X_j$, sample skewness.
+<p class="proof-label">Proof.</p>
+(a) $W(X)=W(\theta\mathbf 1+Z)=W(Z)$, whose law does not involve $\theta$. (b) $W(X)=W(\sigma Z)=W(Z)$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the range is ancillary</div>
+<p>Uniform$(\theta,\theta+1)$, $n=5$, $200{,}000$ reps per $\theta$. Theory: $E[R]=\frac{n-1}{n+1}=0.6667$ for all $\theta$.</p>
+<pre>theta=    0.0: E[R]=0.6669   q10=0.4169  q50=0.6867  q90=0.8876
+theta=   10.0: E[R]=0.6663   q10=0.4152  q50=0.6861  q90=0.8881
+theta= 1000.0: E[R]=0.6661   q10=0.4158  q50=0.6861  q90=0.8871</pre>
+</div>
+
+<h3>Ancillary does not mean useless: it tells you how precise you are</h3>
+
+<div class="box thm">
+<span class="label">Example (Uniform$(\theta,\theta+1)$).</span>
+Let $R=X_{(n)}-X_{(1)}$ (ancillary) and $\hat\theta=\tfrac12\big(X_{(1)}+X_{(n)}\big)-\tfrac12$. Given $R=r$, $X_{(1)}\sim\mathrm{Uniform}(\theta,\theta+1-r)$, so
+$$\begin{aligned}\hat\theta-\theta\;\Big|\;R=r\ &\sim\ \mathrm{Uniform}\Big(-\tfrac{1-r}{2},\,\tfrac{1-r}{2}\Big),\\ E\big[(\hat\theta-\theta)^2\mid R=r\big]&=\frac{(1-r)^2}{12}.\end{aligned}$$
+<p class="proof-label">Proof.</p>
+The joint density of $(X_{(1)},X_{(n)})=(u,v)$ is $n(n-1)(v-u)^{n-2}$ on $\theta\lt u\lt v\lt\theta+1$. Change variables to $(u,r)$ with $r=v-u$: the density $n(n-1)r^{n-2}$ does not depend on $u$, and $u$ ranges over $(\theta,\theta+1-r)$. So given $R=r$, $u$ is uniform on that interval. Finally $\hat\theta-\theta=(u-\theta)+\tfrac r2-\tfrac12$. <span class="qed">&#8718;</span>
+</div>
+
+<p>The ancillary $R$ carries no information about <em>where</em> $\theta$ is, but it determines <em>how well</em> we can locate it: when $R$ is near $1$ the interval $(X_{(n)}-1,X_{(1)})$ is almost a point. Reporting a single unconditional MSE averages over lucky and unlucky samples; the relevant precision is the conditional one.</p>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; conditional versus unconditional precision</div>
+<p>$n=5$, $400{,}000$ reps. Unconditional MSE theory: $E[(1-R)^2]/12=1/84=0.01190$ (here $1-R\sim\mathrm{Beta}(2,4)$). Binned by the observed range:</p>
+<pre>overall MSE = 0.01194   (theory 1/84 = 0.01190)
+
+R-bin        count    empirical cond. MSE    mean of (1-R)^2/12
+[0.0,0.4)     34718      0.03986                0.03955
+[0.4,0.6)     99981      0.02009                0.02003
+[0.6,0.8)    160217      0.00765                0.00764
+[0.8,0.9)     72179      0.00201                0.00201
+[0.9,1.0)     32905      0.00040                0.00040</pre>
+<p>The conditional MSE varies by a factor of $100$ across ranges. The single number $0.0119$ is a poor description of the accuracy of any particular data set.</p>
+</div>
+
+<div class="box remark">
+<span class="label">Real-world: ancillaries you already condition on.</span>
+In regression the design matrix is treated as fixed: its law does not involve the regression coefficients, so it is ancillary and one analyzes <em>conditionally</em> on it. If the achieved sample size is random (survey nonresponse, users who happen to show up), its law typically does not involve the effect of interest, so inference is conditional on the sample size you actually got. This is the conditionality principle of &sect;6.3 in everyday use.
+</div>
+
 <h3>&sect;6.2.4 Sufficient, Ancillary, and Complete Statistics</h3>
+
+<div class="box def">
+<span class="label">Definition (completeness).</span>
+Let $T\sim f_T(\cdot\mid\theta)$. The family $\{f_T(\cdot\mid\theta)\}$ is <em>complete</em> if
+$$\begin{aligned}&E_\theta[g(T)]=0\ \text{ for all }\theta\\ &\qquad\Longrightarrow\ P_\theta\big(g(T)=0\big)=1\ \text{ for all }\theta .\end{aligned}$$
+We say $T$ is a complete statistic. Interpretation: no non-trivial function of $T$ is an unbiased estimator of zero.
+</div>
+
+<h3>Examples</h3>
+<ul>
+<li><strong>Binomial$(n,\theta)$ is complete.</strong> $E_\theta g(T)=(1-\theta)^n\sum_kg(k)\binom nkr^k$ with $r=\frac{\theta}{1-\theta}$. If this vanishes for all $\theta\in(0,1)$ it is a polynomial in $r$ vanishing on $(0,\infty)$, so every coefficient $g(k)\binom nk$ is $0$.</li>
+<li><strong>$X_{(n)}$ for Uniform$(0,\theta)$ is complete.</strong> $E_\theta g(T)=\theta^{-n}\int_0^\theta g(t)\,nt^{n-1}dt=0$ for all $\theta$ says the signed measure $\nu(B)=\int_Bg(t)t^{n-1}dt$ vanishes on every $[0,\theta]$. These sets form a $\pi$-system generating the Borel sets of $(0,\infty)$, so $\nu\equiv0$, hence $g=0$ a.e.</li>
+<li><strong>Full-rank exponential families.</strong> If the natural parameter space contains an open set of $\mathbb R^k$, the natural sufficient statistic $\big(\sum t_1(X_j),\dots,\sum t_k(X_j)\big)$ is complete, by uniqueness of the (bilateral) Laplace transform.</li>
+</ul>
+
+<div class="box thm">
+<span class="label">Proposition (when completeness fails).</span>
+If $T$ has a non-constant function $r(T)$ that is ancillary with finite mean, then $T$ is not complete.
+<p class="proof-label">Proof.</p>
+Let $c=E[r(T)]$, the same for all $\theta$ by ancillarity. Then $g(T)=r(T)-c$ satisfies $E_\theta g(T)=0$ for every $\theta$, yet $P_\theta(g(T)\ne0)\gt0$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; $(X_{(1)},X_{(n)})$ is not complete</div>
+<p>Uniform$(\theta,\theta+1)$, $n=5$: $g(T)=R-\frac{n-1}{n+1}$ has mean zero for every $\theta$ but is visibly not zero ($300{,}000$ reps per $\theta$):</p>
+<pre>theta=   -3.0: E[g(T)] = -0.00017   sd[g(T)] = 0.1776
+theta=    0.0: E[g(T)] = -0.00001   sd[g(T)] = 0.1782
+theta=    2.5: E[g(T)] = -0.00000   sd[g(T)] = 0.1783
+theta=  100.0: E[g(T)] = -0.00045   sd[g(T)] = 0.1782</pre>
+</div>
+
+<div class="box remark">
+<span class="label">Another non-example: the $N(\theta,\theta^2)$ family.</span>
+Here $(\bar X,S^2)$ is minimal sufficient (a curved exponential family: two statistics, one parameter), but $E[\bar X^2]=\theta^2(1+\tfrac1n)$ and $E[S^2]=\theta^2$, so $g=\bar X^2-(1+\tfrac1n)S^2$ has mean $0$ for every $\theta$ without being zero. Minimal sufficient statistics need not be complete.
+</div>
+
+<div class="box thm">
+<span class="label">Basu's Theorem.</span>
+If $T$ is a complete sufficient statistic for $\theta$ and $S$ is ancillary, then $S$ and $T$ are independent (under every $\theta$).
+<p class="proof-label">Proof.</p>
+Fix an event $A$ for $S$. Ancillarity: $p_A:=P_\theta(S\in A)$ is free of $\theta$. Sufficiency: $\psi_A(t):=P_\theta(S\in A\mid T=t)=Q(\{x:S(x)\in A\}\mid t)$ is free of $\theta$, since it is computed from the $\theta$-free kernel $Q$. Then
+$$E_\theta\big[\psi_A(T)-p_A\big]=P_\theta(S\in A)-p_A=0\quad\text{for all }\theta .$$
+By completeness, $\psi_A(T)=p_A$ almost surely for every $\theta$, i.e. $P_\theta(S\in A\mid T)=P_\theta(S\in A)$ a.s. As $A$ was arbitrary, $S\perp T$. <span class="qed">&#8718;</span>
+</div>
+
+<h3>Three applications of Basu</h3>
+<ol>
+<li><strong>$\bar X\perp S^2$ for normal samples (Thm 5.3.1(b), reproved).</strong> For $N(\mu,\sigma_0^2)$ with $\sigma_0^2$ fixed, $\bar X$ is complete and sufficient for $\mu$ (full-rank exponential family), and $S^2=\frac{\sigma_0^2}{n-1}\sum(Z_i-\bar Z)^2$ with $Z_i=(X_i-\mu)/\sigma_0$ has a law free of $\mu$, so it is ancillary. Basu gives $\bar X\perp S^2$ for each fixed $\sigma_0^2$, hence for all $(\mu,\sigma^2)$. No orthogonal matrices needed, and the proof shows <em>where normality enters</em>: through completeness of $\bar X$. (The Chapter 5 simulation with Exponential data has no parameter family in which $\bar X$ is complete and $S^2$ ancillary, so Basu does not apply, and indeed $\mathrm{corr}(\bar X,S^2)=0.70$.)</li>
+<li><strong>Exponential scale family: total vs. share.</strong> For $X_i\sim\mathrm{Exp}(\text{scale }\theta)$, $T=\sum X_i$ is complete sufficient and $W=X_1/T$ is scale-invariant, hence ancillary. So $W\perp T$, and $W\sim\mathrm{Beta}(1,n-1)$ by the Gamma&ndash;Beta relation of &sect;5.3. The share of the total contributed by one unit is independent of the total.</li>
+<li><strong>Uniform$(0,\theta)$: max vs. ratio.</strong> $X_{(n)}$ is complete sufficient and $X_{(1)}/X_{(n)}$ is scale-invariant, so they are independent.</li>
+</ol>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; Basu for the exponential family</div>
+<p>$X_i\sim\mathrm{Exp}(\text{scale }\theta)$, $n=5$, $T=\sum X_i$, $W=X_1/T$, $150{,}000$ reps per $\theta$. Theory: $W\sim\mathrm{Beta}(1,4)$, mean $0.2000$, variance $0.02667$, independent of $T$:</p>
+<pre>theta=1: E[W]=0.2004  Var[W]=0.02681  corr(W,T)=-0.0024  corr(W^2,log T)=-0.0019
+   E[W  | T quartile 1..4] = 0.2008  0.2010  0.2002  0.1994   &lt;- flat: independent of T
+   E[X1 | T quartile 1..4] = 0.5024  0.8067  1.0845  1.6050   &lt;- NOT flat: X1 is not ancillary
+theta=5: E[W]=0.1999  Var[W]=0.02659  corr(W,T)=+0.0041  corr(W^2,log T)=+0.0038
+   E[W  | T quartile 1..4] = 0.1989  0.1992  0.2010  0.2004   &lt;- flat
+   E[X1 | T quartile 1..4] = 2.4946  3.9990  5.4502  8.0623   &lt;- NOT flat</pre>
+<p>The ancillary share $W$ has the same mean in every quartile of the total; the non-ancillary $X_1$ plainly depends on it. Independence holds at both $\theta=1$ and $\theta=5$.</p>
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (Bahadur): complete sufficient implies minimal sufficient.</span>
+If a minimal sufficient statistic exists, then every complete sufficient statistic is minimal sufficient.
+<p class="proof-label">Proof.</p>
+Let $T$ be complete sufficient and $U$ minimal sufficient. By minimality $U=r(T)$ for some $r$. Replacing $T$ by a bounded bijective image (e.g. $\arctan T$) we may assume $T$ is bounded. Put $\psi(U)=E[T\mid U]$, which is free of $\theta$ because $U$ is sufficient. Then $T-\psi(U)=T-\psi(r(T))$ is a function of $T$ with $E_\theta[T-\psi(U)]=0$ for all $\theta$. By completeness $T=\psi(U)$ a.s., so $T$ is a function of $U$. Thus $T$ and $U$ are functions of each other, so $T$ is minimal sufficient. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Summary of the three roles.</span>
+<table class="data">
+<tr><th>Concept</th><th>What it says</th><th>Why you want it</th></tr>
+<tr><td>Sufficient</td><td>Keeps all information about $\theta$</td><td>Safe compression; Rao&ndash;Blackwell (Ch. 7)</td></tr>
+<tr><td>Minimal sufficient</td><td>Coarsest such compression</td><td>Maximal lossless summary</td></tr>
+<tr><td>Ancillary</td><td>Law free of $\theta$</td><td>Measures precision; condition on it</td></tr>
+<tr><td>Complete</td><td>No unbiased estimators of $0$</td><td>Uniqueness of unbiased estimators (Lehmann&ndash;Scheffé, Ch. 7); Basu</td></tr>
+</table>
+</div>
+
+<!-- ============================= 6.3 ============================= -->
 <h2>&sect;6.3 The Likelihood Principle</h2>
+
 <h3>&sect;6.3.1 The Likelihood Function</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+Given the observed $x$, the <em>likelihood function</em> is $L(\theta\mid x)=f(x\mid\theta)$, viewed as a function of $\theta$ with $x$ held fixed. It is <em>not</em> a density in $\theta$; it does not integrate to $1$, and only ratios $L(\theta_1\mid x)/L(\theta_2\mid x)$ are meaningful because any positive multiplicative constant depending on $x$ alone is arbitrary.
+</div>
+
+<div class="box thm">
+<span class="label">Proposition (minimal sufficiency = likelihood shape).</span>
+Fix $\theta_0$ and define $T(x)$ to be the function $\theta\mapsto f(x\mid\theta)/f(x\mid\theta_0)$ (assume positivity). Then $T$ is minimal sufficient.
+<p class="proof-label">Proof.</p>
+$f(x\mid\theta)/f(y\mid\theta)$ is constant in $\theta$ iff $f(x\mid\theta)/f(x\mid\theta_0)=f(y\mid\theta)/f(y\mid\theta_0)$ for all $\theta$, i.e. iff $T(x)=T(y)$. Apply the criterion of &sect;6.2.2. <span class="qed">&#8718;</span>
+</div>
+
+<h3>Two experiments, one likelihood</h3>
+<p>A coin is flipped repeatedly and the result is $9$ heads and $3$ tails. Two statisticians had different plans: (A) flip exactly $12$ times; (B) flip until the third tail appears. Their likelihoods for $p=P(\text{heads})$ are
+$$L_A(p)=\binom{12}{9}p^9(1-p)^3,\qquad L_B(p)=\binom{11}{2}p^9(1-p)^3 .$$
+They are proportional (ratio $\binom{12}{9}/\binom{11}{2}=220/55=4$ for every $p$). Yet for $H_0:p=\tfrac12$ versus $H_1:p\gt\tfrac12$ the one-sided $p$-values differ:
+$$\begin{aligned}p_A&=P\big(\mathrm{Bin}(12,\tfrac12)\ge9\big)=\frac{299}{4096}=0.0730,\\ p_B&=P\big(\mathrm{Bin}(11,\tfrac12)\ge9\big)=\frac{67}{2048}=0.0327 .\end{aligned}$$
+(For B: at least $9$ heads before the third tail iff at most $2$ tails in the first $11$ flips.) At $\alpha=0.05$ one design rejects and the other does not, from the same data.</p>
+
+<div class="simbox">
+<div class="label">Simulation check (exact computation)</div>
+<pre>Design A (n=12 fixed, Binomial):             one-sided p-value = 0.07300
+Design B (sample until 3rd failure, NegBin): one-sided p-value = 0.03271
+
+L_bin(p)/L_nb(p):  p=0.10: 4.0000   p=0.30: 4.0000   p=0.50: 4.0000
+                   p=0.75: 4.0000   p=0.90: 4.0000</pre>
+</div>
+
 <h3>&sect;6.3.2 The Formal Likelihood Principle</h3>
+
+<p>Write $\mathrm{Ev}(E,x)$ for "the evidence about $\theta$ arising from experiment $E$ with outcome $x$". Three principles:</p>
+
+<div class="box def">
+<span class="label">Formal Sufficiency Principle (FSP).</span>
+If $T$ is sufficient in $E$ and $T(x)=T(y)$, then $\mathrm{Ev}(E,x)=\mathrm{Ev}(E,y)$.
+</div>
+<div class="box def">
+<span class="label">Conditionality Principle (CP).</span>
+Let $E_1,E_2$ be experiments on the same $\theta$. Let $E^*$ pick $J\in\{1,2\}$ with known probabilities not depending on $\theta$, run $E_J$, and report $(J,X_J)$. Then $\mathrm{Ev}(E^*,(j,x_j))=\mathrm{Ev}(E_j,x_j)$. (Analyze the experiment actually performed, not the coin toss that chose it.)
+</div>
+<div class="box def">
+<span class="label">Formal Likelihood Principle (LP).</span>
+Let $E_1,E_2$ be experiments on the same $\theta$ with outcomes $x_1^*,x_2^*$ such that $L_2(\theta\mid x_2^*)=C\,L_1(\theta\mid x_1^*)$ for all $\theta$ and some constant $C\gt0$. Then $\mathrm{Ev}(E_1,x_1^*)=\mathrm{Ev}(E_2,x_2^*)$.
+</div>
+
+<div class="box thm">
+<span class="label">Birnbaum's Theorem (1962).</span>
+The FSP and the CP together imply the LP.
+<p class="proof-label">Proof (discrete case).</p>
+Let $E^*$ toss a fair coin to choose $E_1$ or $E_2$, so $f^*((j,x)\mid\theta)=\tfrac12f_j(x\mid\theta)$. Define a statistic $T$ on $E^*$ by $T(1,x_1^*)=T(2,x_2^*)=(1,x_1^*)$ and $T(j,x)=(j,x)$ otherwise.
+<em>$T$ is sufficient.</em> At the merged point, $P_\theta\big((1,x_1^*)\mid T=(1,x_1^*)\big)=\dfrac{\tfrac12f_1(x_1^*\mid\theta)}{\tfrac12f_1(x_1^*\mid\theta)+\tfrac12Cf_1(x_1^*\mid\theta)}=\dfrac{1}{1+C}$, free of $\theta$; elsewhere $T$ is injective, so the conditional law is a point mass.
+By the FSP, $\mathrm{Ev}(E^*,(1,x_1^*))=\mathrm{Ev}(E^*,(2,x_2^*))$. By the CP, $\mathrm{Ev}(E^*,(1,x_1^*))=\mathrm{Ev}(E_1,x_1^*)$ and $\mathrm{Ev}(E^*,(2,x_2^*))=\mathrm{Ev}(E_2,x_2^*)$. Chaining these gives $\mathrm{Ev}(E_1,x_1^*)=\mathrm{Ev}(E_2,x_2^*)$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Consequences and controversy.</span>
+Under the LP the stopping rule is irrelevant once the data are in hand: both designs above must report the same evidence. A Bayesian analysis obeys this automatically: with a $\mathrm{Beta}(a,b)$ prior, both designs produce the posterior $\mathrm{Beta}(a+9,b+3)$. Frequentist error rates (like the $p$-values above) are computed over the <em>sample space</em>, which depends on the design, so they violate the LP. Frequentists reply that controlling error rates <em>is</em> the point, and that therefore the design is relevant. The Birnbaum argument itself is contested in the literature (see Mayo, <em>Statistical Science</em> 2014 for a critique and the replies it provoked), so treat the LP as a position with a famous proof, not as a settled fact.
+</div>
+
+<h3>Why this matters: optional stopping ("peeking")</h3>
+<p>Suppose you monitor an A/B test, looking at $z_i=S_i/\sqrt i$ after every observation and stop the first time $|z_i|\gt1.96$. Under $H_0$ the law of the iterated logarithm says $|S_i|/\sqrt i$ has $\limsup=\infty$ almost surely, so with unlimited looks you will <em>eventually</em> reject with probability $1$. The nominal 5% is a property of one pre-specified look, not of a procedure that peeks.</p>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; type I error under peeking</div>
+<p>$H_0$ true, data $N(0,1)$, a z-test at nominal 5%, at most $100$ observations, $40{,}000$ reps:</p>
+<pre>one look at n=100:                    P(reject) = 0.0499
+10 equally spaced looks (10,...,100): P(reject) = 0.1958
+100 looks (after every observation):  P(reject) = 0.3745</pre>
+<p>Peeking after every observation multiplies the false-positive rate by about $7.5$ ($0.3745$ vs $0.0499$) with only $100$ observations. Remedies: pre-register a fixed sample size, or use a sequential design with a corrected boundary (alpha-spending, group-sequential tests, always-valid p-values). The LP viewpoint offers another: report the likelihood or posterior, which do not depend on how you decided to stop.</p>
+</div>
+
+<!-- ============================= 6.4 ============================= -->
 <h2>&sect;6.4 The Equivariance Principle</h2>
+
+<h3>Measurement equivariance and the formal principle</h3>
+<p>Estimate the mean temperature of a reactor. Whether the thermometer reads in Celsius or Fahrenheit, your answer should agree after converting units. This is <em>measurement equivariance</em>. Formalizing: let $\mathcal G$ be a group of bijections $g$ of the sample space.</p>
+
+<div class="box def">
+<span class="label">Definition (invariant model, induced group).</span>
+The family $\{f(\cdot\mid\theta)\}$ is <em>invariant under $\mathcal G$</em> if for each $g\in\mathcal G$ and $\theta$ there is a $\bar g(\theta)\in\Theta$ such that $Y=g(X)$ has law $f(\cdot\mid\bar g(\theta))$ whenever $X\sim f(\cdot\mid\theta)$. The maps $\bar g$ form the induced group $\bar{\mathcal G}$ on $\Theta$.
+</div>
+
+<div class="box def">
+<span class="label">Equivariance Principle.</span>
+If $Y=g(X)$ then inference about $\bar g(\theta)$ based on $y$ should be the "same" as inference about $\theta$ based on $x$, transported by $\bar g$. For a point estimator $W$ this reads
+$$W\big(g(x)\big)=\bar g\big(W(x)\big)\qquad\text{for all }g\in\mathcal G,\ x .$$
+Such $W$ is called <em>equivariant</em>.
+</div>
+
+<h3>Examples</h3>
+<ul>
+<li><strong>Location group</strong> $g_a(x)=x+a\mathbf 1$, $\bar g_a(\theta)=\theta+a$. Equivariant: $W(x+a\mathbf 1)=W(x)+a$. Satisfied by $\bar x$, the median, the midrange, trimmed means. <em>Not</em> satisfied by $0.8\,\bar x$ (it shrinks toward $0$, a fixed point that the group moves).</li>
+<li><strong>Scale group</strong> $g_c(x)=cx$ ($c\gt0$), $\bar g_c(\sigma)=c\sigma$. Equivariant estimators of $\sigma$: $W(cx)=cW(x)$, e.g. $S$, the mean absolute deviation.</li>
+<li><strong>Location-scale group</strong> $x\mapsto ax+b\mathbf 1$: estimators of $\mu$ satisfy $W(ax+b)=aW(x)+b$; estimators of $\sigma$ satisfy $W(ax+b)=|a|W(x)$.</li>
+</ul>
+
+<div class="box thm">
+<span class="label">Proposition (constant risk).</span>
+Suppose the model is invariant and the loss is invariant: $L(\bar g\theta,\bar ga)=L(\theta,a)$. If $W$ is equivariant, its risk $R(\theta,W)=E_\theta L(\theta,W(X))$ is constant on orbits of $\bar{\mathcal G}$. In particular, for a location model with $L=\ell(a-\theta)$, $R(\theta,W)=E_0\,\ell(W(Z))$ for every $\theta$.
+<p class="proof-label">Proof.</p>
+Let $Y=gX$ with $X\sim f(\cdot\mid\theta)$, so $Y\sim f(\cdot\mid\bar g\theta)$. Then
+$$\begin{aligned}R(\bar g\theta,W)&=E_{\bar g\theta}L\big(\bar g\theta,W(Y)\big)=E_\theta L\big(\bar g\theta,W(gX)\big)\\ &=E_\theta L\big(\bar g\theta,\bar gW(X)\big)=E_\theta L\big(\theta,W(X)\big)\\ &=R(\theta,W).\end{aligned}$$
+For the location case, $W(Z+\theta\mathbf 1)-\theta=W(Z)$. <span class="qed">&#8718;</span>
+</div>
+
+<p>Constant risk is what makes the problem tractable: instead of comparing risk <em>functions</em>, we compare single numbers, and a best equivariant estimator can exist even when no uniformly best estimator does. For squared error in a location family it is the <em>Pitman estimator</em>,
+$$W^*(x)=\frac{\int\theta\prod_if(x_i-\theta)\,d\theta}{\int\prod_if(x_i-\theta)\,d\theta},$$
+the posterior mean under a flat prior, which equals $\bar x$ for normal data. We return to it in Chapter 7.</p>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; constant risk for equivariant estimators</div>
+<p>$N(\theta,1)$, $n=10$, $120{,}000$ reps per $\theta$. MSE of three estimators of $\theta$:</p>
+<pre>theta   MSE[mean]   MSE[median]   MSE[0.8*mean]   theory for 0.8*mean = 0.064+(0.2*theta)^2
+  0.0    0.0996      0.1371         0.0637          0.0640
+  1.0    0.1002      0.1384         0.1050          0.1040
+  5.0    0.1000      0.1383         1.0631          1.0640</pre>
+<p>The mean ($\approx0.100=1/n$) and median ($\approx0.138$) have flat risk, as the proposition predicts. The non-equivariant shrinker $0.8\bar X$ beats both near $\theta=0$ (it is a built-in guess that $\theta\approx0$) and is terrible far from it. Equivariance forbids that kind of hidden favoritism.</p>
+</div>
+
+<div class="box remark">
+<span class="label">Real-world: invariance in practice.</span>
+Procedures should not depend on arbitrary conventions. The $t$-statistic $\sqrt n\,\bar X/S$ is unchanged by $x\mapsto cx$ ($c\gt0$), so it does not care whether data are in meters or feet; a z-score is invariant under location-scale changes. In machine learning the same idea drives standardization of features and the design of translation-equivariant convolutional layers. The flip side: a method that <em>does</em> depend on units (like regularization on unstandardized predictors) is making an implicit, usually unintended, modeling choice.
+</div>
+
+<!-- ============================= wrap ============================= -->
+<h2>Where this leaves you</h2>
+<p>Chapter 6 gave you three lenses on a data set. <strong>Sufficiency</strong> (factorization, minimality, and the regeneration picture) says what can be discarded under a model; <strong>ancillarity and completeness</strong>, tied together by Basu, say what is independent of what and which statistics are uniquely determined; the <strong>likelihood principle</strong> says that the stopping rule should not matter, a stance that conflicts with error-rate frequentism and explains why peeking is dangerous; <strong>equivariance</strong> says a procedure should respect the symmetries of the problem, which buys constant risk. Chapter 7 puts these to work: Rao&ndash;Blackwell and Lehmann&ndash;Scheff&eacute; turn sufficient and complete statistics into best unbiased estimators, and MLEs turn out to be functions of the likelihood-shape statistic from &sect;6.3.</p>
 
 <div class="pagenav">
   <a href="../ch05/index.html">&larr; 5. Properties of a Random Sample</a>

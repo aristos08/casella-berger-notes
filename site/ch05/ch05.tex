@@ -31,6 +31,25 @@ $T=T(X_1,\dots,X_n)$, Borel-measurable, parameter-free. Its law $P_X^{\otimes n}
 \begin{remark}[Why it matters]
 Independence $\Rightarrow$ density factorizes $\Rightarrow$ MGFs multiply $\Rightarrow$ tractable sampling distributions. What breaks when iid fails: time series (autocorrelation $\to$ SEs too small), clustered experiments (inflated variance), ML distribution shift, de Finetti/exchangeability. Treating non-iid data as iid is the most common applied error.
 \end{remark}
+\paragraph{Population law versus sampling distribution.} For iid Uniform$(0,\theta)$, $P(X_{(n)}\le x)=(x/\theta)^n$ on $[0,\theta]$: the law of the statistic bears no resemblance to the population law.
+\begin{theorem}[Sampling without replacement]
+Draw $X_1,\dots,X_n$ without replacement from a finite population $c_1,\dots,c_N$ with mean $\bar c$ and variance $\sigma^2=\frac1N\sum_k(c_k-\bar c)^2$. The $X_i$ are identically distributed but not independent, and
+\[E[\bar X]=\bar c,\qquad \Var(\bar X)=\frac{\sigma^2}{n}\cdot\frac{N-n}{N-1}.\]
+\end{theorem}
+\begin{proof}
+$\Var(X_i)=\sigma^2$. For $i\ne j$, $(X_i,X_j)$ is uniform over ordered pairs of distinct members, so
+\begin{align*}
+\Cov(X_i,X_j)&=\frac{1}{N(N-1)}\sum_{k\ne l}(c_k-\bar c)(c_l-\bar c)\\
+&=\frac{1}{N(N-1)}\Big[\Big(\sum_k(c_k-\bar c)\Big)^2-\sum_k(c_k-\bar c)^2\Big]=-\frac{\sigma^2}{N-1}.
+\end{align*}
+Then $\Var(\bar X)=n^{-2}\big[n\sigma^2-n(n-1)\sigma^2/(N-1)\big]=\frac{\sigma^2}{n}\frac{N-n}{N-1}$.
+\end{proof}
+\begin{remark}
+The finite population correction is $\approx1$ when $n/N$ is tiny; when a large share of a small population is sampled, the iid standard error is too large. iid errors cut both ways.
+\end{remark}
+\begin{simbox}
+$N=50$, $n=20$, $\sigma^2=6.4711$, 100k reps: with replacement $\Var(\bar X)=0.32456$ (th.\ $0.32356$); without replacement $0.19707$ (th.\ $0.19810$).
+\end{simbox}
 
 \section{\S5.2 Sums of Random Variables}
 Convolution $f_{X+Y}=f_X*f_Y$ (differentiate $F_Z(z)=\int F_X(z-y)f_Y(y)\,dy$ under the integral by DCT). Workhorse:
@@ -41,6 +60,21 @@ With MGF uniqueness this gives reproductive properties: iid Bernoulli$(p)\to$Bin
 
 \begin{simbox}
 Sum of 5 iid Exp(1), 200k reps: mean $4.9968$ (th.\ 5), var $4.9736$ (th.\ 5); density matches Gamma(5,1) to 3 dp. Sum of 20 iid Bernoulli(0.3) matches Binomial(20,0.3) pmf.
+\end{simbox}
+
+\paragraph{Worked MGF examples.} Poisson$(\lambda)$: $M(t)=\exp\{\lambda(e^t-1)\}$, so the sum has $\exp\{n\lambda(e^t-1)\}$. Gamma$(\alpha,\beta)$: $M(t)=(1-\beta t)^{-\alpha}$ for $t<1/\beta$, so the sum has $(1-\beta t)^{-n\alpha}$.
+\begin{theorem}[Moments of $\bar X$ and $S^2$]
+For iid $X_i$ with mean $\mu$, variance $\sigma^2<\infty$: $E\bar X=\mu$, $\Var\bar X=\sigma^2/n$, $ES^2=\sigma^2$.
+\end{theorem}
+\begin{proof}
+The first two follow from linearity and independence. For the third, $\sum_i(X_i-\bar X)^2=\sum_iX_i^2-n\bar X^2$, so
+$E\big[\sum_i(X_i-\bar X)^2\big]=n(\sigma^2+\mu^2)-n(\sigma^2/n+\mu^2)=(n-1)\sigma^2$.
+\end{proof}
+\begin{remark}
+$S$ itself is biased low for $\sigma$ (Jensen: $\sqrt\cdot$ strictly concave). Heavy tails break everything: for iid standard Cauchy, $\varphi(t)=e^{-|t|}$, so $\varphi_{\bar X}(t)=\varphi(t/n)^n=e^{-|t|}$ and $\bar X_n$ is again standard Cauchy for every $n$; averaging buys nothing.
+\end{remark}
+\begin{simbox}
+Exp(1), $n=5$, 200k reps: $E[S^2]=0.9951$ (th.\ 1), $E[SS/n]=0.7961$ (th.\ $0.8$). Cauchy: $P(|\bar X_n|>1)=0.5030,\,0.4863,\,0.4993,\,0.4978$ for $n=1,10,100,1000$ (th.\ $0.5$ each; normal data: $0.3173,\,0.0016,\,0,\,0$).
 \end{simbox}
 
 \section{\S5.3 Sampling from the Normal Distribution}
@@ -68,14 +102,46 @@ $f_T(t)=\dfrac{\Gamma(\frac{p+1}{2})}{\Gamma(p/2)\sqrt{p\pi}}(1+t^2/p)^{-(p+1)/2
 $n=10$: $\Var(T)=1.2904$ (th.\ $9/7=1.2857$), 97.5 pct $2.272$ (table $2.262$). $T^2\dto F_{1,9}$ confirmed.
 \end{simbox}
 
+\subsection{Supporting facts}
+\begin{theorem}[$\chi^2_1$ from a squared normal]
+$Z\sim N(0,1)\Rightarrow Z^2\sim\mathrm{Gamma}(\tfrac12,2)=\chi^2_1$; hence $\chi^2_p=\mathrm{Gamma}(\tfrac p2,2)$.
+\end{theorem}
+\begin{proof}
+$P(Z^2\le y)=2\Phi(\sqrt y)-1$; differentiate: $f(y)=\varphi(\sqrt y)y^{-1/2}=y^{-1/2}e^{-y/2}/\sqrt{2\pi}$, the Gamma$(\frac12,2)$ density.
+\end{proof}
+\begin{theorem}[Relations among $t$, $F$, Beta]
+(i) $T_p^2\sim F_{1,p}$; (ii) $1/F_{p,q}\sim F_{q,p}$; (iii) $\dfrac{(p/q)F}{1+(p/q)F}\sim\mathrm{Beta}(\frac p2,\frac q2)$ for $F\sim F_{p,q}$.
+\end{theorem}
+\begin{proof}
+(i) $T_p^2=Z^2/(W/p)$ with $Z^2\sim\chi^2_1$. (ii) swap numerator and denominator. (iii) $\frac{(p/q)F}{1+(p/q)F}=\frac{U}{U+V}$ with $U\sim\mathrm{Gamma}(\frac p2,2)\perp V\sim\mathrm{Gamma}(\frac q2,2)$. Substituting $u=sb$, $v=s(1-b)$ (Jacobian $s$) the joint density is proportional to $s^{(p+q)/2-1}e^{-s/2}\cdot b^{p/2-1}(1-b)^{q/2-1}$, which factorizes, so $B\sim\mathrm{Beta}(\frac p2,\frac q2)$ and $B\perp S=U+V$.
+\end{proof}
+\begin{remark}
+Using $1.96$ with $S$ in place of $\sigma$ treats $t_{n-1}$ as normal; the correct multiplier is the $t_{n-1}$ quantile.
+\end{remark}
+\begin{simbox}
+$Z^2$: mean $1.0072$, var $2.0302$, $P(Z^2\le1)=0.6808$ (th.\ $0.6827$). Beta relation ($p=3,q=10$): mean $0.2303$ (th.\ $0.2308$), var $0.02357$ (th.\ $0.02367$). Coverage of $\bar X\pm cS/\sqrt n$, $N(0,1)$ data, nominal $0.95$: $n=3$: $0.8108$ ($c=1.96$) vs $0.9496$ ($c=4.303$); $n=5$: $0.8790$ vs $0.9497$ ($2.776$); $n=10$: $0.9181$ vs $0.9500$ ($2.262$); $n=30$: $0.9414$ vs $0.9506$ ($2.045$).
+\end{simbox}
+
 \section{\S5.4 Order Statistics}
 $X_{(1)}\le\dots\le X_{(n)}$.
 \begin{theorem}
 $f_{X_{(j)}}(x)=\dfrac{n!}{(j-1)!(n-j)!}F(x)^{j-1}(1-F(x))^{n-j}f(x)$.
 \end{theorem}
 \begin{proof}
-Multinomial: one obs in $(x,x+dx]$, $j-1$ below, $n-j$ above, $+o(dx)$; divide by $dx$. (Rigorous version: differentiate $F_{X_{(j)}}(x)=\sum_{k\ge j}\binom nk F^k(1-F)^{n-k}$.)
+$X_{(j)}\le x$ iff at least $j$ of the independent events $\{X_i\le x\}$ occur, each with probability $p=F(x)$, so $F_{X_{(j)}}(x)=\sum_{k=j}^n\binom nk p^k(1-p)^{n-k}$. Using $k\binom nk=n\binom{n-1}{k-1}$ and $(n-k)\binom nk=n\binom{n-1}{k}$, with $a_k:=n\binom{n-1}{k-1}p^{k-1}(1-p)^{n-k}$,
+\[\frac{d}{dp}\sum_{k=j}^n\binom nk p^k(1-p)^{n-k}=\sum_{k=j}^n(a_k-a_{k+1})=a_j,\]
+since the sum telescopes and $a_{n+1}=0$. Now $a_j=\frac{n!}{(j-1)!(n-j)!}p^{j-1}(1-p)^{n-j}$ and $dp/dx=f(x)$.
 \end{proof}
+\begin{theorem}[Joint laws]
+(a) The order statistics have joint density $n!\prod_if(x_{(i)})$ on $x_{(1)}<\dots<x_{(n)}$. (b) For $i<j$, $(X_{(i)},X_{(j)})$ has density
+\[\frac{n!}{(i-1)!(j-i-1)!(n-j)!}f(u)f(v)F(u)^{i-1}[F(v)-F(u)]^{j-i-1}[1-F(v)]^{n-j},\quad u<v.\]
+\end{theorem}
+\begin{remark}
+Uniform case, $i=1,j=n$: $f(u,v)=n(n-1)(v-u)^{n-2}$, so the range has density $n(n-1)r^{n-2}(1-r)$, i.e.\ $R\sim\mathrm{Beta}(n-1,2)$. The median of an odd sample $n=2m+1$ is Beta$(m+1,m+1)$. Real-world: $P(X_{(n)}\le x)=F(x)^n$; with $100$ independent backend calls, each slow w.p.\ $0.01$, $P(\text{some call slow})=1-0.99^{100}\approx0.634$.
+\end{remark}
+\begin{simbox}
+Range, $n=10$: mean $0.8178$ (th.\ $0.8182$), var $0.01247$ (th.\ $0.01240$). Median, $n=11$: mean $0.4997$, var $0.01918$ (Beta$(6,6)$: $0.01923$).
+\end{simbox}
 \begin{remark}
 Uniform case: $U_{(j)}\sim\mathrm{Beta}(j,n-j+1)$; max $\sim$Beta$(n,1)$, min $\sim$Beta$(1,n)$. Probability integral transform reduces every continuous case to the uniform.
 \end{remark}
@@ -104,11 +170,58 @@ $\sqrt n(T_n-\theta)\convD N(0,\sigma^2)$, $g'(\theta)\ne 0\Rightarrow\sqrt n(g(
 WLLN (Exp(1), $\varepsilon=0.1$): $P(|\bar X_n-1|>\varepsilon)=0.75,0.48,0.16,0.002,0.00$ for $n=10,50,200,1000,5000$. CLT (standardized Exp(1)): tail asymmetry at $n=2$ ($0.118$ vs $0.145$) symmetrizes to $\approx 0.158=\Phi(-1)$ by $n=50$. Delta (logit of Bernoulli(0.3), th.\ var $4.762$): empirical $5.15,4.79,4.76$ for $n=50,500,5000$.
 \end{simbox}
 
+\subsection*{Additional \S5.5 results}
+\begin{theorem}[Borel--Cantelli criterion; SLLN under a fourth moment]
+(a) If $\sum_nP(|X_n-X|>\varepsilon)<\infty$ for all $\varepsilon>0$ then $X_n\convAS X$. (b) If $EX_1^4<\infty$ then $\bar X_n\convAS\mu$.
+\end{theorem}
+\begin{proof}
+(a) First Borel--Cantelli gives $P(|X_n-X|>\varepsilon\text{ i.o.})=0$; intersect over $\varepsilon=1/k$. (b) With $Y_i=X_i-\mu$, only terms with no index appearing exactly once survive in $E(\sum Y_i)^4$, giving $E(\bar X_n-\mu)^4=\frac{n\mu_4+3n(n-1)\sigma^4}{n^4}\le\frac{\mu_4+3\sigma^4}{n^2}$. Markov gives $P(|\bar X_n-\mu|>\varepsilon)\le\frac{\mu_4+3\sigma^4}{\varepsilon^4n^2}$, summable; apply (a).
+\end{proof}
+\begin{theorem}[Hierarchy]
+(i) $X_n\convAS X\Rightarrow X_n\convP X$. (ii) $X_n\convP X\Rightarrow X_n\convD X$. (iii) $X_n\convD c$ (constant) $\Rightarrow X_n\convP c$.
+\end{theorem}
+\begin{proof}
+(i) $A_n=\bigcup_{m\ge n}\{|X_m-X|>\varepsilon\}$ decreases to a subset of the null set $\{X_m\not\to X\}$, so $P(|X_n-X|>\varepsilon)\le P(A_n)\to0$. (ii) At a continuity point $x$ of $F_X$: $\{X_n\le x\}\subset\{X\le x+\varepsilon\}\cup\{|X_n-X|>\varepsilon\}$ gives $\limsup F_{X_n}(x)\le F_X(x+\varepsilon)$; symmetrically $\liminf F_{X_n}(x)\ge F_X(x-\varepsilon)$; let $\varepsilon\downarrow0$. (iii) $P(|X_n-c|>\varepsilon)\le F_{X_n}(c-\varepsilon)+1-F_{X_n}(c+\varepsilon)\to0$.
+\end{proof}
+\begin{theorem}[Slutsky]
+If $X_n\convD X$ and $Y_n\convP c$ (constant), then $X_n+Y_n\convD X+c$, $X_nY_n\convD cX$, and $X_n/Y_n\convD X/c$ ($c\ne0$).
+\end{theorem}
+\begin{remark}
+For iid data of any shape with finite variance, $S\convP\sigma$, so $\sqrt n(\bar X_n-\mu)/S\convD N(0,1)$: $t$-intervals are asymptotically valid without normality. But finite-sample coverage lags with skew.
+\end{remark}
+\begin{theorem}[Second-order delta method]
+If $\sqrt n(T_n-\theta)\convD N(0,\sigma^2)$, $g'(\theta)=0$, $g''(\theta)\ne0$, then $n\big(g(T_n)-g(\theta)\big)\convD\frac{\sigma^2g''(\theta)}{2}\chi^2_1$.
+\end{theorem}
+\begin{proof}
+$g(T_n)=g(\theta)+\frac12g''(\theta)(T_n-\theta)^2+o_P(n^{-1})$; multiply by $n$ and apply continuous mapping and Slutsky.
+\end{proof}
+\begin{simbox}
+Exp(1) data, nominal 95\% $t$ interval, 50k reps: coverage $0.9045,\,0.9277,\,0.9431$ for $n=10,30,100$. Bernoulli$(\frac12)$, $g(p)=p(1-p)$: $n(g(\bar X)-\frac14)$ has mean $-0.2506,\,-0.2494$ and var $0.1235,\,0.1248$ for $n=100,400$ (limit $-0.25$, $0.125$); $P(-4V\le3.841)=0.9427,\,0.9491$ ($\chi^2_1$: $0.95$).
+\end{simbox}
+
 \section{\S5.6 Generating a Random Sample}
 \begin{theorem}[Inverse-CDF]
 $U\sim\mathrm{Unif}(0,1)$, $F^{-1}(u)=\inf\{x:F(x)\ge u\}\Rightarrow X=F^{-1}(U)\sim F$. Proof: $P(F^{-1}(U)\le x)=P(U\le F(x))=F(x)$.
 \end{theorem}
 E.g.\ Exp: $X=-\ln(1-U)/\lambda$. Normal has no elementary $F^{-1}$ (use Box--Muller / accept-reject).
+\subsection*{\S5.6.2 Indirect methods}
+\begin{theorem}[Box--Muller]
+$U_1,U_2$ iid Unif$(0,1)$, $R=\sqrt{-2\ln U_1}$, $\Theta=2\pi U_2$. Then $Z_1=R\cos\Theta$, $Z_2=R\sin\Theta$ are iid $N(0,1)$.
+\end{theorem}
+\begin{proof}
+In polar coordinates the iid $N(0,1)$ density is $\frac1{2\pi}e^{-r^2/2}\,r$: $\Theta\sim$Unif$(0,2\pi)$ independent of $R$ with density $re^{-r^2/2}$. Then $P(R^2>s)=e^{-s/2}$, and $P(-2\ln U_1>s)=P(U_1<e^{-s/2})=e^{-s/2}$ as well.
+\end{proof}
+\begin{theorem}[Poisson from exponentials]
+$E_i$ iid Exp(rate $\lambda$), $S_k=\sum_{i\le k}E_i$, $N=\max\{k:S_k\le1\}$. Then $N\sim$Poisson$(\lambda)$.
+\end{theorem}
+\begin{proof}
+$\{N\ge k\}=\{S_k\le1\}$ with $S_k\sim$Gamma$(k,1/\lambda)$, and integration by parts gives $P(S_k\le1)=\int_0^\lambda\frac{s^{k-1}e^{-s}}{(k-1)!}ds=P(\mathrm{Poisson}(\lambda)\ge k)$ for all $k\ge1$.
+\end{proof}
+\begin{simbox}
+Box--Muller (300k pairs): mean $+0.0026$, var $1.0015$, $P(|Z_1|<1.96)=0.9500$, $\Cov(Z_1,Z_2)=+0.0029$. Poisson(3) via arrivals: mean $2.9968$, var $2.9922$; pmf at $k=0,\dots,5$: $0.0497,0.1498,0.2242,0.2244,0.1679,0.1008$ (th.\ $0.0498,0.1494,0.2240,0.2240,0.1680,0.1008$).
+\end{simbox}
+
+\subsection*{\S5.6.3 Accept/Reject}
 \begin{theorem}[Accept/Reject]
 Target $f$, proposal $g$, $M=\sup f/g<\infty$. Draw $Y\sim g,\ U\sim\mathrm{Unif}(0,1)$; accept if $U\le f(Y)/(Mg(Y))$. Then $X\sim f$, $P(\text{accept})=1/M$, trials $\sim$Geom$(1/M)$.
 \end{theorem}
@@ -120,6 +233,14 @@ Darts under $Mg$, keep those under $f$; $M=$ mean proposals per accept. Ancestor
 \end{remark}
 \begin{simbox}
 Exp(2) via inverse-CDF: mean $0.5003$, var $0.2499$ (th.\ $0.5,0.25$). Accept/reject Beta(2,3) from Uniform, $M=1.7778$: acceptance $0.5628$ (th.\ $1/M=0.5625$), kept draws match Beta(2,3).
+\end{simbox}
+
+\begin{remark}
+$M\ge1$ always. The target need only be known up to a constant: with $f=\tilde f/c$ and $\tilde M=\sup\tilde f/g$ the same rule returns exact draws, with acceptance probability $c/\tilde M$ (the Bayesian-posterior situation, and the doorway to MCMC).
+\end{remark}
+\paragraph{Monte Carlo error.} For $\hat\theta_N=\frac1N\sum h(X_i)$, WLLN gives $\hat\theta_N\convP\theta$ and CLT gives $\sqrt N(\hat\theta_N-\theta)\convD N(0,\Var h(X))$: the standard error is $O(1/\sqrt N)$, so each extra decimal digit costs $100\times$ more draws.
+\begin{simbox}
+$\hat\pi_N=4\cdot(\text{fraction of hits})$; theoretical SE $=1.6422/\sqrt N$. Empirical SE: $0.16978$ ($N=100$, th.\ $0.16422$), $0.05170$ ($10^3$, $0.05193$), $0.01637$ ($10^4$, $0.01642$), $0.00504$ ($10^5$, $0.00519$).
 \end{simbox}
 
 \end{document}

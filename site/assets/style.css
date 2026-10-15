@@ -50,6 +50,29 @@ nav.topnav a.chip.current {
 nav.topnav a.chip.done::after { content: " \2713"; color: #2e7d32; font-weight: bold; }
 nav.topnav a.chip.current.done::after { color: #cdeccd; }
 
+/* ---- Overflow safety: nothing may ever extend past its box ---- */
+body { overflow-wrap: break-word; }
+.box, .simbox { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+.box > *, .simbox > * { max-width: 100%; }
+/* Display math scrolls inside its own container instead of poking out of a box */
+mjx-container[jax="CHTML"][display="true"] {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+/* Inline math may wrap at operators rather than overflow a line */
+mjx-container[jax="CHTML"]:not([display="true"]) { max-width: 100%; }
+pre { max-width: 100%; white-space: pre; }
+table.data { max-width: 100%; display: block; overflow-x: auto; }
+table.data tbody { display: table; margin: 0 auto; }
+img, svg { max-width: 100%; height: auto; }
+@media (max-width: 640px) {
+  body { margin: 20px auto; padding: 0 14px; }
+  .box, .simbox { padding: 8px 10px; }
+  mjx-container[jax="CHTML"][display="true"] { font-size: 92%; }
+}
+
 /* ---- Headings ---- */
 h1 { font-size: 1.6em; border-bottom: 2px solid #333; padding-bottom: 8px; }
 h1 .subtitle { display: block; font-size: 0.65em; font-weight: normal; color: #555; margin-top: 4px; }

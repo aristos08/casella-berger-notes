@@ -1,49 +1,164 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm,mathtools,booktabs,enumitem,hyperref,xcolor}
-\usepackage{tcolorbox}\tcbuselibrary{theorems}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems}
+
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{remark}[theorem]{Remark}
-\newtcolorbox{simbox}{colback=blue!4!white,colframe=blue!40!black,boxrule=0.4pt,title=Simulation Check}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtcolorbox{simbox}{colback=blue!4!white,colframe=blue!40!black,boxrule=0.4pt,arc=1pt,title=Simulation Check}
+
+\DeclareMathOperator{\Var}{Var}\DeclareMathOperator{\Cov}{Cov}\DeclareMathOperator{\E}{E}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\ind}{\mathbf 1}
+
 \title{Casella \& Berger, Chapter 6\\[2pt]\large Principles of Data Reduction}
 \author{Course notes}\date{}
-\begin{document}\maketitle
 
-% ===================================================================
-% NOT YET WRITTEN. Section skeleton only.
-% Fill each section with: definitions, full proofs, intuition,
-% and a simbox reporting real seeded-simulation output.
-% ===================================================================
+\begin{document}
+\maketitle
 
 \section{\S6.1 Introduction}
-% TODO
+A statistic $T$ partitions the sample space into fibers $A_t=\{x:T(x)=t\}$; in measure-theoretic terms, reducing to $T$ retains only the sub-$\sigma$-algebra $\sigma(T)$. Three principles govern when and how to reduce: the \emph{sufficiency} principle (lose nothing about $\theta$), the \emph{likelihood} principle (only the likelihood function matters), and the \emph{equivariance} principle (respect the symmetries of the problem).
 
 \section{\S6.2 The Sufficiency Principle}
-% TODO
+\subsection{\S6.2.1 Sufficient statistics}
+\begin{definition}
+$T(X)$ is \emph{sufficient} for $\theta$ if the conditional law of $X$ given $T$ does not depend on $\theta$: there is a Markov kernel $Q(B\mid t)$ such that $Q(B\mid T)$ is a version of $P_\theta(X\in B\mid T)$ for every $\theta$.
+\end{definition}
+For discrete $X$, $P_\theta(X=x\mid T=T(x))=p(x\mid\theta)/q(T(x)\mid\theta)$.
+\begin{theorem}[Factorization]
+$T$ is sufficient iff $f(x\mid\theta)=g(T(x)\mid\theta)h(x)$ for some $g,h$.
+\end{theorem}
+\begin{proof}[Proof (discrete case)]
+($\Rightarrow$) Take $g(t\mid\theta)=P_\theta(T=t)$ and $h(x)=P(X=x\mid T=T(x))$. ($\Leftarrow$) $q(t\mid\theta)=g(t\mid\theta)\sum_{T(y)=t}h(y)$, so $\frac{p(x\mid\theta)}{q(T(x)\mid\theta)}=\frac{h(x)}{\sum_{T(y)=T(x)}h(y)}$, free of $\theta$.
+\end{proof}
+\begin{remark}
+For a family dominated by a $\sigma$-finite measure the same holds with $f=dP_\theta/d\mu$ (Halmos--Savage 1949; Lehmann--Romano \S2.6).
+\end{remark}
+\paragraph{Examples.} Bernoulli: $T=\sum X_i$. $N(\mu,\sigma^2)$, $\sigma^2$ known: from $\sum(x_i-\mu)^2=\sum(x_i-\bar x)^2+n(\bar x-\mu)^2$, $\bar X$ is sufficient; $(\bar X,S^2)$ when both are unknown. Uniform$(0,\theta)$: $f=\theta^{-n}\ind\{x_{(n)}\le\theta\}\ind\{x_{(1)}\ge0\}$, so $X_{(n)}$. Exponential family $h(x)c(\theta)\exp\{\sum w_i(\theta)t_i(x)\}$: $\big(\sum_jt_i(X_j)\big)_{i\le k}$. If $T$ is sufficient and $T=r(S)$ then $S$ is sufficient.
+\begin{proposition}[Regeneration]
+If $T$ is sufficient with kernel $Q$, and $X'\sim Q(\cdot\mid T(X))$ is drawn with fresh randomness, then $X'\sim P_\theta$ for every $\theta$.
+\end{proposition}
+\begin{proof}
+$P(X'\in B)=E_\theta[Q(B\mid T)]=E_\theta[P_\theta(X\in B\mid T)]=P_\theta(X\in B)$.
+\end{proof}
+\begin{simbox}
+Bernoulli$(p)$, $n=4$, $T=2$: all six arrangements have conditional frequency $\approx1/6$ for both $p=0.2$ ($0.1658$--$0.1682$) and $p=0.7$ ($0.1652$--$0.1675$), while $P(T=2)$ is $0.1541$ vs $0.2636$. Regeneration, $N(3,1)$, $n=11$: $\Var(X_1)=1.0076$ (original), $1.0004$ (from $\bar X$), $1.0925$ (from the median, not sufficient); sd of max $0.5762,\,0.5782,\,0.7019$.
+\end{simbox}
+\begin{remark}
+Sufficiency is relative to a model: if conversion drifts with time, $(n,\sum x_i)$ no longer suffices. Pitman--Koopman--Darmois: under regularity only exponential families have sufficient statistics of bounded dimension.
+\end{remark}
 
-\subsection{\S6.2.1 Sufficient Statistics}
-% TODO
+\subsection{\S6.2.2 Minimal sufficient statistics}
+\begin{definition}
+$T$ is \emph{minimal sufficient} if it is sufficient and a function of every sufficient statistic.
+\end{definition}
+\begin{theorem}
+Suppose $f(x\mid\theta)>0$ and $f(x\mid\theta)/f(y\mid\theta)$ is constant in $\theta$ iff $T(x)=T(y)$. Then $T$ is minimal sufficient.
+\end{theorem}
+\begin{proof}
+Choose a representative $x_t$ in each fiber. Then $h(x):=f(x\mid\theta)/f(x_{T(x)}\mid\theta)$ is free of $\theta$, giving $f(x\mid\theta)=g(T(x)\mid\theta)h(x)$. If $S$ is sufficient, $f=g'(S(x)\mid\theta)h'(x)$, so $S(x)=S(y)$ implies the ratio $h'(x)/h'(y)$ is free of $\theta$, hence $T(x)=T(y)$.
+\end{proof}
+\paragraph{Examples.} For $N(\mu,\sigma^2)$ the likelihood ratio is $\exp\{-\frac1{2\sigma^2}[n(\bar x^2-\bar y^2)-2n\mu(\bar x-\bar y)+(n-1)(s_x^2-s_y^2)]\}$, constant iff $\bar x=\bar y$ and $s_x^2=s_y^2$. Uniform$(\theta,\theta+1)$: the likelihood is $\ind\{x_{(n)}-1<\theta<x_{(1)}\}$, so $(X_{(1)},X_{(n)})$. Cauchy location: the order statistics (a ratio of monic degree-$2n$ polynomials in $\theta$ is constant iff the multisets of roots agree).
 
-\subsection{\S6.2.2 Minimal Sufficient Statistics}
-% TODO
+\subsection{\S6.2.3 Ancillary statistics}
+\begin{definition}
+$S(X)$ is \emph{ancillary} if its law does not depend on $\theta$.
+\end{definition}
+\begin{proposition}
+(a) Location family $X_i=\theta+Z_i$: every translation-invariant statistic (range, $S^2$, residuals) is ancillary. (b) Scale family $X_i=\sigma Z_i$: every scale-invariant statistic ($X_1/X_2$, $X_1/\sum X_j$, skewness) is ancillary. Proof: $W(X)=W(Z)$.
+\end{proposition}
+\begin{proposition}[Ancillaries measure precision]
+Uniform$(\theta,\theta+1)$, $R=X_{(n)}-X_{(1)}$, $\hat\theta=\frac12(X_{(1)}+X_{(n)})-\frac12$. Given $R=r$, $\hat\theta-\theta\sim\mathrm{Unif}\big(-\frac{1-r}2,\frac{1-r}2\big)$, so $E[(\hat\theta-\theta)^2\mid R=r]=(1-r)^2/12$.
+\end{proposition}
+\begin{proof}
+The joint density of $(X_{(1)},X_{(n)})=(u,v)$ is $n(n-1)(v-u)^{n-2}$ on $\theta<u<v<\theta+1$. In $(u,r=v-u)$ the density $n(n-1)r^{n-2}$ is free of $u\in(\theta,\theta+1-r)$, so $u\mid r$ is uniform, and $\hat\theta-\theta=(u-\theta)+\frac r2-\frac12$.
+\end{proof}
+\begin{simbox}
+Uniform$(\theta,\theta+1)$, $n=5$: $E[R]=0.6669,\,0.6663,\,0.6661$ for $\theta=0,10,1000$ (th.\ $0.6667$). Overall MSE $0.01194$ (th.\ $1/84=0.01190$). Conditional MSE by range bin $[0,.4),[.4,.6),[.6,.8),[.8,.9),[.9,1)$: $0.03986,\,0.02009,\,0.00765,\,0.00201,\,0.00040$ vs. mean $(1-R)^2/12$ of $0.03955,\,0.02003,\,0.00764,\,0.00201,\,0.00040$.
+\end{simbox}
+In regression the design matrix is ancillary and one conditions on it; a random achieved sample size is likewise ancillary (conditionality principle, \S6.3).
 
-\subsection{\S6.2.3 Ancillary Statistics}
-% TODO
-
-\subsection{\S6.2.4 Sufficient, Ancillary, and Complete Statistics}
-% TODO
+\subsection{\S6.2.4 Sufficient, ancillary, and complete statistics}
+\begin{definition}
+$\{f_T(\cdot\mid\theta)\}$ is \emph{complete} if $E_\theta g(T)=0$ for all $\theta$ implies $P_\theta(g(T)=0)=1$ for all $\theta$.
+\end{definition}
+\paragraph{Examples.} Binomial$(n,\theta)$: $E_\theta g(T)=(1-\theta)^n\sum_kg(k)\binom nkr^k$ with $r=\theta/(1-\theta)$, a polynomial vanishing on $(0,\infty)$. $X_{(n)}$ for Uniform$(0,\theta)$: $\int_0^\theta g(t)t^{n-1}dt=0$ for all $\theta$ means the signed measure $g(t)t^{n-1}dt$ vanishes on a $\pi$-system generating the Borel sets, so $g=0$ a.e. Full-rank exponential families: by uniqueness of the Laplace transform.
+\begin{proposition}
+If $T$ has a non-constant ancillary function $r(T)$ with finite mean, $T$ is not complete: $g(T)=r(T)-E\,r(T)$ has mean zero for all $\theta$. In particular $(X_{(1)},X_{(n)})$ for Uniform$(\theta,\theta+1)$ is not complete, and neither is $(\bar X,S^2)$ for $N(\theta,\theta^2)$: $g=\bar X^2-(1+\frac1n)S^2$ has mean $0$.
+\end{proposition}
+\begin{simbox}
+Uniform$(\theta,\theta+1)$, $n=5$, $g=R-\frac{n-1}{n+1}$: $E[g]=-0.00017,\,-0.00001,\,0.00000,\,-0.00045$ at $\theta=-3,0,2.5,100$, with sd $\approx0.178$.
+\end{simbox}
+\begin{theorem}[Basu]
+If $T$ is complete sufficient and $S$ is ancillary, then $S\perp T$.
+\end{theorem}
+\begin{proof}
+For an event $A$, $p_A=P_\theta(S\in A)$ is free of $\theta$ (ancillarity) and $\psi_A(t)=P_\theta(S\in A\mid T=t)$ is free of $\theta$ (sufficiency). $E_\theta[\psi_A(T)-p_A]=0$ for all $\theta$, so by completeness $\psi_A(T)=p_A$ a.s., i.e.\ $P(S\in A\mid T)=P(S\in A)$.
+\end{proof}
+\paragraph{Applications.} (1) $N(\mu,\sigma_0^2)$: $\bar X$ is complete sufficient for $\mu$ and $S^2$ is ancillary, so $\bar X\perp S^2$ (Theorem 5.3.1(b) reproved; normality enters through completeness). (2) Exponential scale family: $\sum X_i$ is complete sufficient and $X_1/\sum X_j\sim\mathrm{Beta}(1,n-1)$ is ancillary, hence independent. (3) Uniform$(0,\theta)$: $X_{(n)}\perp X_{(1)}/X_{(n)}$.
+\begin{simbox}
+Exp(scale $\theta$), $n=5$, $W=X_1/T$: $E[W]=0.2004,\,0.1999$ and $\Var[W]=0.02681,\,0.02659$ (Beta$(1,4)$: $0.2$, $0.02667$) at $\theta=1,5$; $\mathrm{corr}(W,T)=-0.0024,\,+0.0041$; $E[W\mid T\text{ quartile}]$ flat ($0.2008,0.2010,0.2002,0.1994$ at $\theta=1$) while $E[X_1\mid T\text{ quartile}]=0.5024,0.8067,1.0845,1.6050$.
+\end{simbox}
+\begin{theorem}[Bahadur]
+If a minimal sufficient statistic exists, every complete sufficient statistic is minimal sufficient.
+\end{theorem}
+\begin{proof}
+Let $T$ be complete sufficient (WLOG bounded) and $U=r(T)$ minimal sufficient. $\psi(U)=E[T\mid U]$ is free of $\theta$, and $T-\psi(U)$ is a function of $T$ with mean zero for all $\theta$, so $T=\psi(U)$ a.s. Hence $T$ and $U$ are functions of each other.
+\end{proof}
 
 \section{\S6.3 The Likelihood Principle}
-% TODO
+\subsection{\S6.3.1 The likelihood function}
+\begin{definition}
+$L(\theta\mid x)=f(x\mid\theta)$ as a function of $\theta$ for fixed $x$; only ratios are meaningful.
+\end{definition}
+\begin{proposition}
+$T(x)=\big(\theta\mapsto f(x\mid\theta)/f(x\mid\theta_0)\big)$ is minimal sufficient. (The ratio $f(x\mid\theta)/f(y\mid\theta)$ is constant in $\theta$ iff $T(x)=T(y)$; apply \S6.2.2.)
+\end{proposition}
+\paragraph{Two experiments, one likelihood.} $9$ heads and $3$ tails from (A) $12$ fixed flips or (B) flipping until the third tail: $L_A=\binom{12}{9}p^9(1-p)^3$, $L_B=\binom{11}{2}p^9(1-p)^3$, ratio $4$. One-sided $p$-values for $H_0:p=\frac12$: $p_A=\frac{299}{4096}=0.0730$, $p_B=P(\mathrm{Bin}(11,\frac12)\ge9)=\frac{67}{2048}=0.0327$.
 
-\subsection{\S6.3.1 The Likelihood Function}
-% TODO
-
-\subsection{\S6.3.2 The Formal Likelihood Principle}
-% TODO
+\subsection{\S6.3.2 The formal likelihood principle}
+\begin{definition}
+\emph{FSP}: if $T$ is sufficient in $E$ and $T(x)=T(y)$ then $\mathrm{Ev}(E,x)=\mathrm{Ev}(E,y)$. \emph{CP}: in the mixture $E^*$ (choose $E_J$ with known probabilities, report $(J,X_J)$), $\mathrm{Ev}(E^*,(j,x_j))=\mathrm{Ev}(E_j,x_j)$. \emph{LP}: if $L_2(\theta\mid x_2^*)=C\,L_1(\theta\mid x_1^*)$ for all $\theta$, then $\mathrm{Ev}(E_1,x_1^*)=\mathrm{Ev}(E_2,x_2^*)$.
+\end{definition}
+\begin{theorem}[Birnbaum 1962]
+FSP and CP imply LP.
+\end{theorem}
+\begin{proof}[Proof (discrete)]
+Let $E^*$ toss a fair coin, so $f^*((j,x)\mid\theta)=\frac12f_j(x\mid\theta)$. Let $T(1,x_1^*)=T(2,x_2^*)=(1,x_1^*)$ and $T=\mathrm{id}$ elsewhere. At the merged point $P_\theta((1,x_1^*)\mid T)=\frac{1}{1+C}$, free of $\theta$, so $T$ is sufficient. FSP: $\mathrm{Ev}(E^*,(1,x_1^*))=\mathrm{Ev}(E^*,(2,x_2^*))$. CP: these equal $\mathrm{Ev}(E_1,x_1^*)$ and $\mathrm{Ev}(E_2,x_2^*)$.
+\end{proof}
+\begin{remark}
+Bayesian posteriors obey the LP (both designs above give Beta$(a+9,b+3)$); frequentist error rates depend on the stopping rule and do not. The Birnbaum argument is itself contested (Mayo, \emph{Statistical Science} 2014).
+\end{remark}
+\paragraph{Optional stopping.} By the law of the iterated logarithm, $\limsup|S_i|/\sqrt i=\infty$ a.s., so a nominal 5\% z-test applied after every observation rejects a true null eventually with probability $1$.
+\begin{simbox}
+Exact: $p_A=0.07300$, $p_B=0.03271$, likelihood ratio $4.0000$ at $p=0.1,0.3,0.5,0.75,0.9$. Peeking, $H_0$ true, $\le100$ observations, 40k reps: one look $0.0499$; ten looks $0.1958$; a look after every observation $0.3745$.
+\end{simbox}
 
 \section{\S6.4 The Equivariance Principle}
-% TODO
+\begin{definition}
+A model is \emph{invariant} under a group $\mathcal G$ of bijections of the sample space if for each $g$ there is $\bar g(\theta)$ with $g(X)\sim f(\cdot\mid\bar g(\theta))$ whenever $X\sim f(\cdot\mid\theta)$. An estimator $W$ is \emph{equivariant} if $W(g(x))=\bar g(W(x))$.
+\end{definition}
+Location group: $W(x+a\mathbf 1)=W(x)+a$ ($\bar x$, median, midrange; \emph{not} $0.8\bar x$). Scale group: $W(cx)=cW(x)$ ($S$). Location-scale: $W(ax+b)=aW(x)+b$ for $\mu$, $|a|W(x)$ for $\sigma$.
+\begin{proposition}[Constant risk]
+If the loss is invariant, $L(\bar g\theta,\bar ga)=L(\theta,a)$, an equivariant $W$ has risk constant on $\bar{\mathcal G}$-orbits; in a location model with $L=\ell(a-\theta)$, $R(\theta,W)=E_0\ell(W(Z))$.
+\end{proposition}
+\begin{proof}
+With $Y=gX\sim f(\cdot\mid\bar g\theta)$,
+\begin{align*}
+R(\bar g\theta,W)&=E_\theta L(\bar g\theta,W(gX))=E_\theta L(\bar g\theta,\bar gW(X))\\
+&=E_\theta L(\theta,W(X))=R(\theta,W).
+\end{align*}
+\end{proof}
+The best equivariant location estimator under squared error is the Pitman estimator $W^*(x)=\int\theta\prod f(x_i-\theta)d\theta\big/\int\prod f(x_i-\theta)d\theta$ ($=\bar x$ for normal data); see Chapter 7.
+\begin{simbox}
+$N(\theta,1)$, $n=10$, 120k reps: MSE of mean $0.0996,0.1002,0.1000$; of median $0.1371,0.1384,0.1383$; of $0.8\bar X$ (not equivariant) $0.0637,0.1050,1.0631$ (theory $0.064+(0.2\theta)^2$) at $\theta=0,1,5$.
+\end{simbox}
+\begin{remark}
+The $t$-statistic $\sqrt n\bar X/S$ is invariant under $x\mapsto cx$ ($c>0$), so it does not depend on units; standardization in machine learning and translation-equivariant layers use the same idea.
+\end{remark}
 
 \end{document}

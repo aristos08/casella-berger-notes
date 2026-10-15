@@ -14,7 +14,7 @@ MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$
 <nav class="topnav">
   <a class="brand" href="../index.html">C&amp;B</a>
   <a class="chip current done" href="../ch05/index.html">5</a>
-  <a class="chip" href="../ch06/index.html">6</a>
+  <a class="chip done" href="../ch06/index.html">6</a>
   <a class="chip" href="../ch07/index.html">7</a>
   <a class="chip" href="../ch08/index.html">8</a>
   <a class="chip" href="../ch09/index.html">9</a>
@@ -54,12 +54,38 @@ Frequentist inference rests entirely on computing (or approximating) sampling di
 Treating non-iid data as iid is the single most common applied-statistics error in industry. Keep this lens on throughout.
 </div>
 
+<h3>Population law versus sampling distribution</h3>
+<p>The population law $P_X$ describes <em>one</em> observation. The sampling distribution describes a function of the <em>whole sample</em>, and it depends on both the statistic and $n$. Take $X_1,\dots,X_n$ iid $\mathrm{Uniform}(0,\theta)$ and $X_{(n)}=\max_i X_i$. Independence gives $P(X_{(n)}\le x)=\prod_i P(X_i\le x)=(x/\theta)^n$ on $[0,\theta]$. That law looks nothing like the uniform: as $n$ grows it piles up against $\theta$. The population is the input; the sampling distribution is the output of the pair (statistic, $n$).</p>
+
+<div class="box thm">
+<span class="label">Proposition (sampling without replacement).</span>
+Draw a simple random sample $X_1,\dots,X_n$ <em>without replacement</em> from a finite population $c_1,\dots,c_N$ with mean $\bar c$ and variance $\sigma^2=\frac1N\sum_k(c_k-\bar c)^2$. The $X_i$ are identically distributed (each uniform on the population) but <em>not</em> independent, and
+$$E[\bar X]=\bar c,\qquad \mathrm{Var}(\bar X)=\frac{\sigma^2}{n}\cdot\frac{N-n}{N-1}.$$
+<p class="proof-label">Proof.</p>
+Each $X_i$ is uniform on the population, so $E X_i=\bar c$ and $\mathrm{Var}(X_i)=\sigma^2$. For $i\ne j$ the pair $(X_i,X_j)$ is uniform over ordered pairs of <em>distinct</em> members, so
+$$\begin{aligned}\mathrm{Cov}(X_i,X_j)&=\frac{1}{N(N-1)}\sum_{k\ne l}(c_k-\bar c)(c_l-\bar c)\\ &=\frac{1}{N(N-1)}\Big[\Big(\sum_k (c_k-\bar c)\Big)^2-\sum_k (c_k-\bar c)^2\Big]=-\frac{\sigma^2}{N-1}.\end{aligned}$$
+Therefore $\mathrm{Var}(\bar X)=\frac{1}{n^2}\big[n\sigma^2-n(n-1)\frac{\sigma^2}{N-1}\big]=\frac{\sigma^2}{n}\cdot\frac{N-n}{N-1}$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Why this matters.</span>
+The factor $\frac{N-n}{N-1}$ is the <em>finite population correction</em>. When the sampled fraction $n/N$ is tiny it is essentially $1$ and "treat it as iid" is harmless. When you sample a large share of a small population (auditing 40% of invoices, polling most of a small town) the iid standard error is <em>too large</em>. So iid errors cut both ways: dependence from clustering inflates variance, dependence from exhausting a population deflates it.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>A fixed population of $N=50$ values (drawn once, $\sigma^2=6.4711$), samples of $n=20$, $100{,}000$ reps each:</p>
+<pre>with replacement   : Var(Xbar) = 0.32456   theory sigma^2/n = 0.32356
+without replacement: Var(Xbar) = 0.19707   theory (sigma^2/n)(N-n)/(N-1) = 0.19810</pre>
+<p>Sampling without replacement cuts the variance by the predicted factor $(N-n)/(N-1)=30/49\approx 0.61$.</p>
+</div>
+
 <!-- ============================= 5.2 ============================= -->
 <h2>&sect;5.2 Sums of Random Variables from a Random Sample</h2>
 
 <h3>Convolution, from first principles</h3>
 <p>If $X,Y$ are independent with densities $f_X,f_Y$, then $Z=X+Y$ has</p>
-$$F_Z(z) = \iint_{x+y\le z} f_X(x)f_Y(y)\,dx\,dy = \int_{-\infty}^{\infty} F_X(z-y)f_Y(y)\,dy,$$
+$$\begin{aligned}F_Z(z) &= \iint_{x+y\le z} f_X(x)f_Y(y)\,dx\,dy\\ &= \int_{-\infty}^{\infty} F_X(z-y)f_Y(y)\,dy,\end{aligned}$$
 <p>and differentiating under the integral (dominated convergence, since $|\partial_z F_X(z-y)| = f_X(z-y)$ is integrable against $f_Y$) gives $f_Z = f_X * f_Y$. Correct but painful; the MGF is the workhorse.</p>
 
 <div class="box thm">
@@ -97,6 +123,45 @@ empirical var  = 4.9736   theory (var  = 5)
  7 |    0.1634     |    0.1643</pre>
 </div>
 
+<h3>Worked MGF examples</h3>
+<p><strong>Poisson.</strong> If $X_i\sim\mathrm{Poisson}(\lambda)$ then $M_{X_i}(t)=\exp\{\lambda(e^t-1)\}$ for all $t$, so $M_{\sum X_i}(t)=\exp\{n\lambda(e^t-1)\}$, the $\mathrm{Poisson}(n\lambda)$ MGF. <strong>Gamma.</strong> With scale parametrization, $M_{X_i}(t)=(1-\beta t)^{-\alpha}$ for $t\lt 1/\beta$, so the sum has MGF $(1-\beta t)^{-n\alpha}$, i.e. $\mathrm{Gamma}(n\alpha,\beta)$. Both MGFs are finite on a neighborhood of $0$, so uniqueness applies.</p>
+
+<div class="box thm">
+<span class="label">Theorem (moments of $\bar X$ and $S^2$).</span>
+If $X_1,\dots,X_n$ are iid with mean $\mu$ and variance $\sigma^2\lt\infty$ (no normality), then
+$$E[\bar X]=\mu,\qquad \mathrm{Var}(\bar X)=\frac{\sigma^2}{n},\qquad E[S^2]=\sigma^2 .$$
+<p class="proof-label">Proof.</p>
+The first two follow from linearity and, for the variance, independence ($\mathrm{Var}(\sum X_i)=\sum\mathrm{Var}(X_i)$). For the third use $\sum_i(X_i-\bar X)^2=\sum_i X_i^2-n\bar X^2$ and $E X_i^2=\sigma^2+\mu^2$, $E\bar X^2=\sigma^2/n+\mu^2$:
+$$E\Big[\sum_i(X_i-\bar X)^2\Big]=n(\sigma^2+\mu^2)-n\Big(\frac{\sigma^2}{n}+\mu^2\Big)=(n-1)\sigma^2.$$
+Dividing by $n-1$ gives $E[S^2]=\sigma^2$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Why $n-1$, and a caution.</span>
+Deviations from $\bar X$ are systematically smaller than deviations from the unknown $\mu$ (the sample mean is the point that minimizes squared deviations), costing one degree of freedom; dividing by $n-1$ exactly repairs the bias. But $S$ itself is <em>biased low</em> for $\sigma$: since $\sqrt{\cdot}$ is strictly concave, Jensen gives $E[S]\lt\sqrt{E[S^2]}=\sigma$ unless $S^2$ is degenerate. Unbiasedness does not survive nonlinear transformations.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$n=5$ draws from $\mathrm{Exp}(1)$ ($\sigma^2=1$), $200{,}000$ reps:</p>
+<pre>E[S^2]  (divisor n-1) = 0.9951   theory 1
+E[SS/n] (divisor n)   = 0.7961   theory (n-1)/n = 0.8</pre>
+</div>
+
+<div class="box remark">
+<span class="label">Where it breaks: the Cauchy distribution.</span>
+Everything above needs a finite mean and variance. If $X_i$ are iid standard Cauchy, the MGF does not exist, but the characteristic function does: $\varphi(t)=e^{-|t|}$. Then $\varphi_{\bar X}(t)=\varphi(t/n)^n=e^{-|t|}$, so <em>$\bar X_n$ is again standard Cauchy for every $n$</em>. Averaging buys nothing. This is the template for heavy-tailed data in practice (insurance losses, request latencies, trading volumes): a few extreme observations dominate the mean, and "standard error $=s/\sqrt n$" is meaningless.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$P(|\bar X_n|\gt 1)$ for Cauchy data ($4{,}000$ reps per $n$). Theory: $1/2$ for every $n$. For $N(0,1)$ data the same probability collapses with $n$:</p>
+<pre>n=    1: Cauchy 0.5030   (normal data: 0.3173)
+n=   10: Cauchy 0.4863   (normal data: 0.0016)
+n=  100: Cauchy 0.4993   (normal data: 0.0000)
+n= 1000: Cauchy 0.4978   (normal data: 0.0000)</pre>
+</div>
+
 <!-- ============================= 5.3 ============================= -->
 <h2>&sect;5.3 Sampling from the Normal Distribution</h2>
 <p>The chapter's centerpiece: where you earn the right to use $t$- and $F$-tables for life.</p>
@@ -116,7 +181,7 @@ empirical var  = 4.9736   theory (var  = 5)
 <p><strong>Step 1 (standardize).</strong> $Z_i=(X_i-\mu)/\sigma$ gives $Z\in\mathbb{R}^n$ with iid $N(0,1)$ coordinates and joint density $f_Z(z)=(2\pi)^{-n/2}e^{-\|z\|^2/2}$, which depends on $z$ <em>only through $\|z\|^2$</em>: the standard Gaussian measure on $\mathbb{R}^n$ is rotationally invariant. This is the engine.</p>
 <p><strong>Step 2 (rotate).</strong> Pick orthogonal $A$ ($AA'=I$) with first row $(\tfrac1{\sqrt n},\dots,\tfrac1{\sqrt n})$ (extend that unit vector to an ONB via Gram&ndash;Schmidt). Let $Y=AZ$. Change of variables $z=A'y$ has $|\det A'|=1$ and $\|z\|^2=\|A'y\|^2=y'AA'y=\|y\|^2$, so $f_Y(y)=(2\pi)^{-n/2}e^{-\|y\|^2/2}$ &mdash; identical form. Hence $Y_1,\dots,Y_n$ are themselves iid $N(0,1)$.</p>
 <p><strong>Step 3 (identify pieces).</strong> $Y_1=\tfrac1{\sqrt n}\sum Z_i=\sqrt n\,\bar Z$, and $\|Y\|^2=\|Z\|^2$, so
-$$\sum_{i=2}^n Y_i^2 = \sum_i Z_i^2 - n\bar Z^2 = \sum_i(Z_i-\bar Z)^2 = \sum_i\Big(\tfrac{X_i-\bar X}{\sigma}\Big)^2 = \frac{(n-1)S^2}{\sigma^2}$$
+$$\begin{aligned}\sum_{i=2}^n Y_i^2 &= \sum_i Z_i^2 - n\bar Z^2 = \sum_i(Z_i-\bar Z)^2\\ &= \sum_i\Big(\tfrac{X_i-\bar X}{\sigma}\Big)^2 = \frac{(n-1)S^2}{\sigma^2}\end{aligned}$$
 ($\mu$ cancels in the centered sum).</p>
 <p><strong>Step 4 (conclude).</strong></p>
 <ul>
@@ -147,15 +212,17 @@ var[Xbar]               =  0.4002     theory sigma^2/n   = 0.4000</pre>
 
 <div class="box def">
 <span class="label">Definition (constructions).</span>
-$$T_p := \frac{Z}{\sqrt{W/p}},\quad Z\sim N(0,1),\, W\sim\chi^2_p,\, Z\perp W \;\Rightarrow\; T_p\sim t_p;\qquad
-F_{p,q} := \frac{U/p}{V/q},\quad U\sim\chi^2_p,\, V\sim\chi^2_q,\, U\perp V.$$
+Let $Z\sim N(0,1)$ and $W\sim\chi^2_p$ be independent. Then
+$$T_p := \frac{Z}{\sqrt{W/p}} \;\sim\; t_p .$$
+Let $U\sim\chi^2_p$ and $V\sim\chi^2_q$ be independent. Then
+$$F_{p,q} := \frac{U/p}{V/q} \;\sim\; F_{p,q} .$$
 </div>
 
 <div class="box remark">
 <span class="label">Why this is exactly what inference needs.</span>
 For iid $N(\mu,\sigma^2)$: $\frac{\bar X-\mu}{\sigma/\sqrt n}\sim N(0,1)$ and $\frac{(n-1)S^2}{\sigma^2}\sim\chi^2_{n-1}$, independent. Dividing, $\sigma$ <em>cancels</em>:
 $$T=\frac{\bar X-\mu}{S/\sqrt n}=\frac{(\bar X-\mu)/(\sigma/\sqrt n)}{\sqrt{[(n-1)S^2/\sigma^2]/(n-1)}}\sim t_{n-1}.$$
-The $t$-test exists precisely because this is the unique construction producing a pivot (free of $\sigma$) from the two independent pieces of Thm 5.3.1.
+The $t$-test exists because this ratio is a pivot (its law is free of both $\mu$ and $\sigma$), built from the two independent pieces of Thm 5.3.1. Independence is what lets us <em>define</em> the ratio's law as "$N(0,1)$ over an independent $\sqrt{\chi^2/p}$".
 </div>
 
 <div class="box thm">
@@ -163,13 +230,13 @@ The $t$-test exists precisely because this is the unique construction producing 
 $f_T(t)=\dfrac{\Gamma(\frac{p+1}{2})}{\Gamma(p/2)\sqrt{p\pi}}\big(1+\frac{t^2}{p}\big)^{-(p+1)/2}$.
 <p class="proof-label">Proof.</p>
 Transform $(z,w)\mapsto(t,w)$ via $z=t\sqrt{w/p}$; Jacobian $\partial z/\partial t=\sqrt{w/p}$. Then
-$$f_T(t)=\frac{1}{\sqrt{2\pi p}\,2^{p/2}\Gamma(p/2)}\int_0^\infty w^{(p-1)/2}\exp\!\Big(-\tfrac w2(1+\tfrac{t^2}{p})\Big)dw.$$
+$$\begin{aligned}f_T(t)&=\frac{1}{\sqrt{2\pi p}\,2^{p/2}\Gamma(p/2)}\\ &\qquad\times\int_0^\infty w^{(p-1)/2}\exp\!\Big(-\tfrac w2\big(1+\tfrac{t^2}{p}\big)\Big)dw.\end{aligned}$$
 With $a=\tfrac12(1+t^2/p)$ the integral is $\Gamma(\tfrac{p+1}{2})a^{-(p+1)/2}$; collecting constants gives the result. <span class="qed">&#8718;</span>
 </div>
 
 <div class="box remark">
 The $F$ density follows identically ($u=\tfrac pq fv$, integrate out $v$):
-$$f_F(f)=\frac{\Gamma(\frac{p+q}{2})}{\Gamma(p/2)\Gamma(q/2)}\Big(\tfrac pq\Big)^{p/2} f^{p/2-1}\Big(1+\tfrac pq f\Big)^{-(p+q)/2}.$$
+$$\begin{aligned}f_F(f)&=\frac{\Gamma(\frac{p+q}{2})}{\Gamma(p/2)\Gamma(q/2)}\Big(\tfrac pq\Big)^{p/2}\\ &\qquad\times f^{p/2-1}\Big(1+\tfrac pq f\Big)^{-(p+q)/2}.\end{aligned}$$
 <strong>Moments:</strong> $E[T_p]=0$ ($p>1$), $\mathrm{Var}(T_p)=\frac{p}{p-2}$ ($p>2$); $E[F_{p,q}]=\frac{q}{q-2}$ ($q>2$). Heavier tails than Normal/$\chi^2$ &mdash; the price of an <em>unknown</em> denominator (not knowing $\sigma$).
 </div>
 
@@ -182,6 +249,51 @@ empirical 97.5th pct =  2.2720    table t_(.975,9) = 2.262</pre>
 <p>$F$ ($U\sim\chi^2_3,V\sim\chi^2_{10}$): mean $1.2497$ vs theory $q/(q-2)=1.25$. And $T_p^2\overset{d}{=}F_{1,p}$: $\mathrm{mean}(T^2)=1.2904$ vs direct $F_{1,9}$ sim $1.2840$ (both theory $1.2857$).</p>
 </div>
 
+<h3>Supporting facts</h3>
+
+<div class="box thm">
+<span class="label">Lemma ($\chi^2_1$ from a squared normal).</span>
+If $Z\sim N(0,1)$ then $Z^2\sim\mathrm{Gamma}(\tfrac12,2)=\chi^2_1$; consequently $\chi^2_p=\mathrm{Gamma}(\tfrac p2,2)$ is the law of a sum of $p$ independent squared standard normals.
+<p class="proof-label">Proof.</p>
+For $y\gt 0$, $P(Z^2\le y)=P(-\sqrt y\le Z\le\sqrt y)=2\Phi(\sqrt y)-1$. Differentiating, $f_{Z^2}(y)=\varphi(\sqrt y)\,y^{-1/2}=\dfrac{y^{-1/2}e^{-y/2}}{\sqrt{2\pi}}$, which is the $\mathrm{Gamma}(\tfrac12,2)$ density since $\Gamma(\tfrac12)=\sqrt\pi$. The statement for $\chi^2_p$ is the Gamma reproductive property from &sect;5.2. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box thm">
+<span class="label">Proposition (relations among $t$, $F$, Beta).</span>
+(i) $T_p^2\sim F_{1,p}$. &nbsp; (ii) $1/F_{p,q}\sim F_{q,p}$. &nbsp; (iii) If $F\sim F_{p,q}$ then $\dfrac{(p/q)F}{1+(p/q)F}\sim\mathrm{Beta}\big(\tfrac p2,\tfrac q2\big)$.
+<p class="proof-label">Proof.</p>
+(i) $T_p^2=Z^2/(W/p)$ and $Z^2\sim\chi^2_1$ by the Lemma, independent of $W$. (ii) Swap the roles of numerator and denominator. (iii) Write $F=\frac{U/p}{V/q}$, so $\frac{(p/q)F}{1+(p/q)F}=\frac{U}{U+V}$ with $U\sim\mathrm{Gamma}(\tfrac p2,2)$ and $V\sim\mathrm{Gamma}(\tfrac q2,2)$ independent. Their joint density is proportional to $u^{p/2-1}v^{q/2-1}e^{-(u+v)/2}$. Substitute $u=sb$, $v=s(1-b)$ (Jacobian $s$):
+$$\begin{aligned}f_{S,B}(s,b)\;\propto\;&\underbrace{s^{(p+q)/2-1}e^{-s/2}}_{\text{in }s}\\ &\times\underbrace{b^{p/2-1}(1-b)^{q/2-1}}_{\text{in }b},\end{aligned}$$
+so $B=U/(U+V)\sim\mathrm{Beta}(\tfrac p2,\tfrac q2)$, and moreover $B$ is independent of $S=U+V$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Note.</span>
+The factorization in (iii) is a first glimpse of Basu's theorem (Chapter 6): $S=U+V$ is a complete sufficient statistic for the scale of a Gamma family and $U/(U+V)$ is scale-free, hence independent of it.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$Z^2$ for $Z\sim N(0,1)$ ($200{,}000$ draws) and the Beta relation with $p=3,\ q=10$:</p>
+<pre>Z^2:  mean = 1.0072 (1)   var = 2.0302 (2)   P(Z^2 &lt;= 1) = 0.6808   (P(|Z|&lt;=1) = 0.6827)
+Y = U/(U+V):  mean = 0.2303 (Beta(1.5,5): 0.2308)   var = 0.02357 (0.02367)</pre>
+</div>
+
+<div class="box remark">
+<span class="label">Practical consequence: small samples and the $t$ critical value.</span>
+Replacing $\sigma$ by $S$ but still using $1.96$ treats $T\sim t_{n-1}$ as if it were $N(0,1)$. The $t_{n-1}$ law has heavier tails, so the nominal interval $\bar X\pm 1.96\,S/\sqrt n$ is too short. The correct multiplier is the $t_{n-1}$ quantile.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>Coverage of $\bar X\pm c\,S/\sqrt n$ for $N(0,1)$ data ($100{,}000$ reps per $n$; nominal $0.95$):</p>
+<pre>n= 3: c=1.96 -&gt; 0.8108    c=t_(.975,2)=4.303  -&gt; 0.9496
+n= 5: c=1.96 -&gt; 0.8790    c=t_(.975,4)=2.776  -&gt; 0.9497
+n=10: c=1.96 -&gt; 0.9181    c=t_(.975,9)=2.262  -&gt; 0.9500
+n=30: c=1.96 -&gt; 0.9414    c=t_(.975,29)=2.045 -&gt; 0.9506</pre>
+<p>At $n=5$ the "95%" interval covers only about $88\%$ of the time. The $t$ quantile restores exact coverage, a direct payoff of Theorem 5.3.1. This matters in pilot studies, lab experiments, and any analysis with few clusters.</p>
+</div>
+
 <!-- ============================= 5.4 ============================= -->
 <h2>&sect;5.4 Order Statistics</h2>
 <p>Reorder the sample ascending: $X_{(1)}\le X_{(2)}\le\dots\le X_{(n)}$. These are the raw material of the median, range, quantile estimates, extremes (max load, worst-case latency), and much of nonparametrics.</p>
@@ -190,10 +302,12 @@ empirical 97.5th pct =  2.2720    table t_(.975,9) = 2.262</pre>
 <span class="label">Theorem (density of a single order statistic).</span>
 For iid continuous $X_i$ with cdf $F$, density $f$, the $j$-th order statistic has density
 $$f_{X_{(j)}}(x) = \frac{n!}{(j-1)!\,(n-j)!}\,F(x)^{\,j-1}\big(1-F(x)\big)^{\,n-j} f(x).$$
-<p class="proof-label">Proof (multinomial heuristic made rigorous).</p>
-The event $\{X_{(j)}\in(x,x+dx]\}$ requires, up to $o(dx)$, exactly one observation in $(x,x+dx]$, exactly $j-1$ below $x$, and $n-j$ above. By independence and the multinomial coefficient for assigning which observations land where,
-$$P(X_{(j)}\in(x,x+dx]) = \frac{n!}{(j-1)!\,1!\,(n-j)!} F(x)^{j-1}\big(1-F(x)\big)^{n-j} f(x)\,dx + o(dx).$$
-Dividing by $dx$ and letting $dx\downarrow 0$ gives the density. (A fully rigorous route differentiates the exact cdf $F_{X_{(j)}}(x)=\sum_{k=j}^n \binom nk F(x)^k(1-F(x))^{n-k}$; the sum telescopes to the stated density.) <span class="qed">&#8718;</span>
+<p class="proof-label">Proof.</p>
+<em>Intuition:</em> to have $X_{(j)}$ near $x$, exactly one observation sits near $x$, $j-1$ lie below, and $n-j$ lie above; the factor $\frac{n!}{(j-1)!\,1!\,(n-j)!}$ counts which observations play which role. <em>Rigorous derivation:</em> $X_{(j)}\le x$ happens iff at least $j$ of the $n$ independent events $\{X_i\le x\}$ occur, each with probability $p=F(x)$. Hence
+$$F_{X_{(j)}}(x)=\sum_{k=j}^{n}\binom nk p^k(1-p)^{n-k}.$$
+Differentiate in $p$ using $k\binom nk=n\binom{n-1}{k-1}$ and $(n-k)\binom nk=n\binom{n-1}{k}$. With $a_k:=n\binom{n-1}{k-1}p^{k-1}(1-p)^{n-k}$,
+$$\frac{d}{dp}\sum_{k=j}^{n}\binom nk p^k(1-p)^{n-k}=\sum_{k=j}^{n}\big(a_k-a_{k+1}\big)=a_j-a_{n+1}=a_j,$$
+because the sum telescopes and $a_{n+1}=0$. Since $a_j=\frac{n!}{(j-1)!(n-j)!}p^{j-1}(1-p)^{n-j}$, the chain rule with $dp/dx=f(x)$ gives the stated density. <span class="qed">&#8718;</span>
 </div>
 
 <div class="box remark">
@@ -212,6 +326,31 @@ empirical var  = 0.01654  theory ab/((a+b)^2(a+b+1))  = 0.01653
   0.23   |     3.0311        |    3.0604
   0.28   |     2.8595        |    2.8664</pre>
 <p>Extremes: max mean $0.9089$ vs $n/(n+1)=0.9091$; min mean $0.0911$ vs $1/(n+1)=0.0909$.</p>
+</div>
+
+<div class="box thm">
+<span class="label">Joint laws.</span>
+(a) The vector of all order statistics has density $n!\prod_{i=1}^n f(x_{(i)})$ on $\{x_{(1)}\lt\dots\lt x_{(n)}\}$. (b) For $i\lt j$, the pair $(X_{(i)},X_{(j)})$ has density
+$$\begin{aligned}f(u,v)&=\frac{n!}{(i-1)!\,(j-i-1)!\,(n-j)!}\\ &\quad\times f(u)f(v)\,F(u)^{i-1}\big[F(v)-F(u)\big]^{j-i-1}\\ &\quad\times\big[1-F(v)\big]^{n-j},\qquad u\lt v.\end{aligned}$$
+<p class="proof-label">Proof of (a).</p>
+Continuity makes ties null events. The $n!$ orderings of the labels are equally likely, and each maps its region of $\mathbb{R}^n$ onto the ordered cone with density $\prod f(x_i)$. Summing the $n!$ identical contributions gives the stated density. Part (b) follows by integrating out the other coordinates, or by the same "who sits where" counting as the single-order-statistic case. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Example: the range.</span>
+For $\mathrm{Uniform}(0,1)$ data take $i=1,\ j=n$: $f(u,v)=n(n-1)(v-u)^{n-2}$ on $0\lt u\lt v\lt 1$. With $R=V-U$, integrating over $u\in(0,1-r)$ gives $f_R(r)=n(n-1)r^{n-2}(1-r)$, i.e. $R\sim\mathrm{Beta}(n-1,2)$ with $E[R]=\frac{n-1}{n+1}$. The sample median of an odd sample $n=2m+1$ is $U_{(m+1)}\sim\mathrm{Beta}(m+1,m+1)$.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$200{,}000$ reps each, $\mathrm{Uniform}(0,1)$ data:</p>
+<pre>range, n=10 : mean = 0.8178 (Beta(9,2): 0.8182)   var = 0.01247 (0.01240)
+median, n=11: mean = 0.4997 (0.5)                 var = 0.01918 (Beta(6,6): 0.01923)</pre>
+</div>
+
+<div class="box remark">
+<span class="label">Real-world: extremes and "the tail at scale".</span>
+$P(X_{(n)}\le x)=F(x)^n$. If a page load fans out to $100$ backend calls and each is independently slower than its own 99th percentile with probability $0.01$, then the probability that <em>at least one</em> exceeds that threshold is $1-0.99^{100}\approx 0.634$. Typical user experience is governed by the maximum of many latencies, not by any single one, which is why engineers track high percentiles rather than means.
 </div>
 
 <!-- ============================= 5.5 ============================= -->
@@ -248,6 +387,17 @@ $X_n\xrightarrow{a.s.}X$ if $P(\{\omega: X_n(\omega)\to X(\omega)\})=1$ &mdash; 
 <span class="label">Strong Law (SLLN), stated.</span>
 If $X_i$ iid with $E|X_1|<\infty$, then $\bar X_n\xrightarrow{a.s.}\mu$. (Proof deferred &mdash; it needs Kolmogorov's maximal inequality or a truncation argument; not a one-liner.)
 </div>
+<div class="box thm">
+<span class="label">Borel&ndash;Cantelli criterion, and the SLLN under a fourth moment.</span>
+(a) If $\sum_n P(|X_n-X|\gt\varepsilon)\lt\infty$ for every $\varepsilon\gt0$, then $X_n\xrightarrow{a.s.}X$. (b) If additionally $E X_1^4\lt\infty$, then $\bar X_n\xrightarrow{a.s.}\mu$.
+<p class="proof-label">Proof.</p>
+(a) By the first Borel&ndash;Cantelli lemma, $P(|X_n-X|\gt\varepsilon\text{ i.o.})=0$ for each $\varepsilon$. Intersecting over $\varepsilon=1/k$, $k\in\mathbb N$, gives $P(X_n\to X)=1$.
+(b) Let $Y_i=X_i-\mu$ with $E Y_i^2=\sigma^2$, $E Y_i^4=\mu_4$. Expanding $E(\sum Y_i)^4$, any term in which some index appears exactly once has mean zero. What survives is $n$ terms $E Y_i^4$ and $3n(n-1)$ terms of the form $E Y_i^2E Y_j^2$, so
+$$E(\bar X_n-\mu)^4=\frac{n\mu_4+3n(n-1)\sigma^4}{n^4}\le\frac{\mu_4+3\sigma^4}{n^2}.$$
+Markov's inequality gives $P(|\bar X_n-\mu|\gt\varepsilon)\le\dfrac{\mu_4+3\sigma^4}{\varepsilon^4 n^2}$, which is summable in $n$. Apply (a). <span class="qed">&#8718;</span>
+<br>(The typewriter sequence below has $\sum_n P(A_n)=\sum_m m\cdot\frac1m=\infty$, consistent with (a) not applying.)
+</div>
+
 <div class="box remark">
 <span class="label">Why the distinction is not pedantic.</span>
 "In probability" says that at any <em>fixed large</em> $n$, you are probably close. "Almost surely" says that if you watch a single run forever, it <em>settles</em>. A long-running estimator, an online learning algorithm, or a Monte Carlo average you keep refining &mdash; those are a.s. statements: you care about the one trajectory you are on, not a snapshot.
@@ -282,6 +432,38 @@ n=200:  P(Z<-1)=0.1573   P(Z>1)=0.1581</pre>
 <p>The left/right asymmetry at $n=2$ (the exponential's skew) is symmetrized away by $n=50$ &mdash; the CLT visibly repairing a skewed summand.</p>
 </div>
 
+<div class="box thm">
+<span class="label">The hierarchy, proved.</span>
+(i) $X_n\xrightarrow{a.s.}X\Rightarrow X_n\xrightarrow{P}X$. (ii) $X_n\xrightarrow{P}X\Rightarrow X_n\xrightarrow{d}X$. (iii) If $X_n\xrightarrow{d}c$ for a constant $c$, then $X_n\xrightarrow{P}c$.
+<p class="proof-label">Proof.</p>
+(i) Fix $\varepsilon$ and let $A_n=\bigcup_{m\ge n}\{|X_m-X|\gt\varepsilon\}$, a decreasing sequence. $\bigcap_n A_n\subset\{X_m\not\to X\}$, a null set, so by continuity from above $P(A_n)\downarrow0$, and $P(|X_n-X|\gt\varepsilon)\le P(A_n)\to0$.
+(ii) Let $x$ be a continuity point of $F_X$ and $\varepsilon\gt0$. Then $\{X_n\le x\}\subset\{X\le x+\varepsilon\}\cup\{|X_n-X|\gt\varepsilon\}$, so $\limsup F_{X_n}(x)\le F_X(x+\varepsilon)$. Symmetrically $\liminf F_{X_n}(x)\ge F_X(x-\varepsilon)$. Let $\varepsilon\downarrow0$ and use continuity at $x$.
+(iii) The cdf of the constant $c$ is $\mathbf 1\{x\ge c\}$, continuous except at $c$. So $P(|X_n-c|\gt\varepsilon)\le F_{X_n}(c-\varepsilon)+1-F_{X_n}(c+\varepsilon)\to0+1-1=0$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box thm">
+<span class="label">Slutsky's theorem.</span>
+If $X_n\xrightarrow{d}X$ and $Y_n\xrightarrow{P}c$ (a constant), then $X_n+Y_n\xrightarrow{d}X+c$, $\ X_nY_n\xrightarrow{d}cX$, and $X_n/Y_n\xrightarrow{d}X/c$ for $c\ne0$.
+<p class="proof-label">Proof sketch.</p>
+Since $Y_n-c\xrightarrow{P}0$, one shows $(X_n,Y_n)\xrightarrow{d}(X,c)$ (for example, via characteristic functions and $|E e^{i(sX_n+tY_n)}-E e^{i(sX_n+tc)}|\le E|e^{it(Y_n-c)}-1|\to0$). The three conclusions then follow from the continuous mapping theorem applied to $(x,y)\mapsto x+y,\ xy,\ x/y$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Why you care: the $t$-statistic without normality.</span>
+For iid data with finite variance (any shape), $S\xrightarrow{P}\sigma$ by the WLLN and continuous mapping. Slutsky then gives
+$$\frac{\bar X_n-\mu}{S/\sqrt n}=\frac{\sqrt n(\bar X_n-\mu)/\sigma}{S/\sigma}\xrightarrow{d}\frac{N(0,1)}{1}.$$
+So $t$-based intervals are <em>asymptotically</em> valid far outside the normal model. The word "asymptotically" is doing real work, though: the CLT approximation is only as good as the skewness of the data allows.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>Coverage of the nominal 95% $t$ interval for the mean of $\mathrm{Exp}(1)$ data (true mean $1$), $50{,}000$ reps per $n$:</p>
+<pre>n=  10: coverage = 0.9045
+n=  30: coverage = 0.9277
+n= 100: coverage = 0.9431</pre>
+<p>Coverage climbs toward $0.95$ as Slutsky/CLT predict, but even at $n=30$ it is $92.8\%$. The "$n\ge30$ is enough" rule of thumb fails for skewed outcomes such as revenue per user or time-to-event data.</p>
+</div>
+
 <h3>&sect;5.5.4 The Delta Method</h3>
 <div class="box thm">
 <span class="label">Delta method.</span>
@@ -303,6 +485,27 @@ It is how you get a standard error for <em>any smooth transform</em> of an asymp
 <p>Convergence to the delta-method variance is clear; the $n=50$ overshoot is the finite-sample curvature the first-order expansion ignores.</p>
 </div>
 
+<div class="box thm">
+<span class="label">Second-order delta method.</span>
+If $\sqrt n(T_n-\theta)\xrightarrow{d}N(0,\sigma^2)$, $g'(\theta)=0$ and $g''(\theta)\ne0$ exists, then
+$$n\big(g(T_n)-g(\theta)\big)\xrightarrow{d}\frac{\sigma^2 g''(\theta)}{2}\,\chi^2_1 .$$
+<p class="proof-label">Proof.</p>
+Taylor with the vanishing first derivative: $g(T_n)=g(\theta)+\tfrac12g''(\theta)(T_n-\theta)^2+o_P(n^{-1})$. Multiply by $n$: $n(g(T_n)-g(\theta))=\tfrac12g''(\theta)\big[\sqrt n(T_n-\theta)\big]^2+o_P(1)$. The bracket converges in law to $\sigma Z$ with $Z\sim N(0,1)$; apply the continuous mapping theorem and Slutsky. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Why it matters.</span>
+The first-order delta method silently <em>breaks</em> where $g'(\theta)=0$: it predicts a degenerate limit ($\sigma^2[g'(\theta)]^2=0$) while the true fluctuations are of order $1/n$, not $1/\sqrt n$, and are non-normal and one-sided. Examples: $g(p)=p(1-p)$ at $p=\tfrac12$ (a variance estimate for a fair coin), or any smooth criterion at an interior optimum. Recognize this failure mode before trusting a standard error.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$X_i\sim\mathrm{Bernoulli}(\tfrac12)$, $g(p)=p(1-p)$, $g'(\tfrac12)=0$, $g''=-2$, $\sigma^2=\tfrac14$. Theory: $n(g(\bar X)-\tfrac14)\to-\tfrac14\chi^2_1$, with mean $-0.25$ and variance $\tfrac1{16}\cdot2=0.125$ ($200{,}000$ reps):</p>
+<pre>n= 100: mean = -0.2506   var = 0.1235   P(-4V &lt;= 3.841) = 0.9427   (chi2_1: 0.9500)
+n= 400: mean = -0.2494   var = 0.1248   P(-4V &lt;= 3.841) = 0.9491   (chi2_1: 0.9500)</pre>
+<p>(Here $-4n(g(\bar X)-\tfrac14)=\big[\sqrt n(2\bar X-1)\big]^2$ exactly, a squared asymptotically normal variable, so the $\chi^2_1$ limit is the CLT squared.)</p>
+</div>
+
 <!-- ============================= 5.6 ============================= -->
 <h2>&sect;5.6 Generating a Random Sample</h2>
 <p>Every simulation above rests on turning uniform random numbers into draws from a target law. Two families: direct (exploit structure) and indirect (accept/reject).</p>
@@ -322,6 +525,43 @@ Practical reach: exponential ($X=-\ln(1-U)/\lambda$), and any distribution with 
 <p>$\mathrm{Exp}(\text{rate}=2)$ via $X=-\ln(1-U)/2$, $300{,}000$ draws:</p>
 <pre>empirical mean = 0.5003   theory 1/lam   = 0.5000
 empirical var  = 0.2499   theory 1/lam^2 = 0.2500</pre>
+</div>
+
+<h3>&sect;5.6.2 Indirect Methods</h3>
+<p>When $F^{-1}$ has no usable closed form, exploit <em>structural relationships</em> between distributions to build the draw from simpler ones. Everything in &sect;5.2&ndash;5.3 is a recipe of this kind: $\chi^2_p$ is a sum of $p$ squared normals, $t_p$ and $F_{p,q}$ are ratios of independent such pieces, $\mathrm{Beta}$ is a ratio of Gammas, and $\mathrm{Binomial}(n,p)$ is a sum of Bernoullis. Two further workhorses:</p>
+
+<div class="box thm">
+<span class="label">Box&ndash;Muller.</span>
+Let $U_1,U_2$ be iid $\mathrm{Uniform}(0,1)$ and set $R=\sqrt{-2\ln U_1}$, $\Theta=2\pi U_2$. Then $Z_1=R\cos\Theta$ and $Z_2=R\sin\Theta$ are iid $N(0,1)$.
+<p class="proof-label">Proof.</p>
+Run the map backwards. If $(Z_1,Z_2)$ are iid $N(0,1)$, then in polar coordinates $(r,\theta)$ the density is $\frac1{2\pi}e^{-r^2/2}\cdot r$ (Jacobian $r$). This factors as $\Theta\sim\mathrm{Uniform}(0,2\pi)$ independent of $R$ with density $re^{-r^2/2}$. For that $R$, $P(R^2\gt s)=\int_{\sqrt s}^\infty re^{-r^2/2}dr=e^{-s/2}$, so $R^2$ is exponential with mean $2$. And $-2\ln U_1$ has exactly this law: $P(-2\ln U_1\gt s)=P(U_1\lt e^{-s/2})=e^{-s/2}$. The two constructions have the same joint law of $(R,\Theta)$, hence of $(Z_1,Z_2)$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box thm">
+<span class="label">Poisson from exponentials.</span>
+Let $E_1,E_2,\dots$ be iid $\mathrm{Exp}(\text{rate}=\lambda)$, $S_k=E_1+\dots+E_k$, and $N=\max\{k:S_k\le1\}$ (with $N=0$ if $E_1\gt1$). Then $N\sim\mathrm{Poisson}(\lambda)$.
+<p class="proof-label">Proof.</p>
+$\{N\ge k\}=\{S_k\le1\}$ and $S_k\sim\mathrm{Gamma}(k,1/\lambda)$. Repeated integration by parts of the Gamma density gives the classical identity $P(S_k\le1)=\int_0^{\lambda}\frac{s^{k-1}e^{-s}}{(k-1)!}ds=P(\mathrm{Poisson}(\lambda)\ge k)$ for every $k\ge1$. Two integer-valued variables with identical upper tails have the same pmf. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Why it matters.</span>
+The Poisson construction is the statement "event counts are what you see when waiting times are memoryless". It is the basis for simulating arrivals in queueing and traffic models. Box&ndash;Muller is the prototype of a direct sampler for a law with no elementary quantile function.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<pre>Box-Muller Z1 (300,000 pairs):
+  mean = +0.0026   var = 1.0015   P(|Z1| &lt; 1.96) = 0.9500 (0.9500)   cov(Z1,Z2) = +0.0029
+
+Poisson(3) via exponential arrivals in [0,1] (200,000 reps): mean = 2.9968, var = 2.9922
+ k | empirical pmf | Poisson(3) pmf
+ 0 |    0.0497     |   0.0498
+ 1 |    0.1498     |   0.1494
+ 2 |    0.2242     |   0.2240
+ 3 |    0.2244     |   0.2240
+ 4 |    0.1679     |   0.1680
+ 5 |    0.1008     |   0.1008</pre>
 </div>
 
 <h3>&sect;5.6.3 The Accept/Reject Algorithm</h3>
@@ -349,6 +589,23 @@ empirical mean       = 0.3998   theory a/(a+b) = 0.4000
   0.38   |     1.7476        |    1.7578
   0.47   |     1.5668        |    1.5711</pre>
 <p>Acceptance rate matches $1/M$ to three decimals, and the kept draws reproduce the Beta density across its support.</p>
+</div>
+
+<div class="box remark">
+<span class="label">Two refinements.</span>
+(1) $M\ge1$ always, since $\int f=\int g=1$ forces $\sup f/g\ge1$; $M=1$ only if $f=g$ a.e. (2) The target need only be known <em>up to a constant</em>: if $f=\tilde f/c$ and $\tilde M=\sup\tilde f/g$, accepting when $U\le\tilde f(Y)/(\tilde Mg(Y))$ still returns exact draws from $f$, with acceptance probability $c/\tilde M$. That is exactly the situation in Bayesian posteriors (prior $\times$ likelihood without the normalizing integral), and it is the doorway to MCMC.
+</div>
+
+<h3>Monte Carlo error: a simulation is itself a statistic</h3>
+<p>If $\theta=E[h(X)]$ is estimated by $\hat\theta_N=\frac1N\sum_{i=1}^N h(X_i)$ with $X_i$ drawn iid, the WLLN gives $\hat\theta_N\xrightarrow{P}\theta$ and the CLT gives $\sqrt N(\hat\theta_N-\theta)\xrightarrow{d}N(0,\mathrm{Var}\,h(X))$. The standard error shrinks like $1/\sqrt N$: <strong>each extra decimal digit costs $100\times$ more draws.</strong> This is also how to report the uncertainty of every simulation check on this page.</p>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>Estimate $\pi=4\,P(U_1^2+U_2^2\le1)$ by $\hat\pi_N=4\cdot(\text{fraction of hits})$. Per-draw sd is $4\sqrt{\tfrac\pi4(1-\tfrac\pi4)}=1.6422$, so the theoretical standard error is $1.6422/\sqrt N$. Empirical standard error across repeated runs:</p>
+<pre>N=   100 (600 runs): mean = 3.1309   empirical SE = 0.16978   theory 0.16422
+N=  1000 (600 runs): mean = 3.1381   empirical SE = 0.05170   theory 0.05193
+N= 10000 (400 runs): mean = 3.1421   empirical SE = 0.01637   theory 0.01642
+N=100000 (100 runs): mean = 3.1423   empirical SE = 0.00504   theory 0.00519</pre>
 </div>
 
 <!-- ============================= wrap ============================= -->

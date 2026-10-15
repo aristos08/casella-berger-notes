@@ -1,0 +1,75 @@
+
+========================================================================
+5.1 Sampling WITHOUT replacement from a finite population (not independent)
+========================================================================
+  population N=50, sample n=20, sigma^2 (divisor N) = 6.4711
+  with replacement   : Var(Xbar) = 0.32456   theory sigma^2/n = 0.32356
+  without replacement: Var(Xbar) = 0.19707   theory (sigma^2/n)(N-n)/(N-1) = 0.19810
+
+========================================================================
+5.2 Unbiasedness of S^2 (divisor n-1) vs the divisor-n version; Exp(1) has sigma^2=1, n=5
+========================================================================
+  E[S^2 (n-1)]     = 0.9951   theory 1
+  E[ss/n]          = 0.7961   theory (n-1)/n = 0.8
+
+========================================================================
+5.2 Cauchy: averaging does NOT help (Xbar_n is again standard Cauchy). P(|Xbar_n|>1) = 1/2 for all n
+========================================================================
+  n=    1: Cauchy empirical P(|Xbar|>1) = 0.5030  (theory 0.5000)   [for N(0,1) data it would be 0.3173]
+  n=   10: Cauchy empirical P(|Xbar|>1) = 0.4863  (theory 0.5000)   [for N(0,1) data it would be 0.0016]
+  n=  100: Cauchy empirical P(|Xbar|>1) = 0.4993  (theory 0.5000)   [for N(0,1) data it would be 0.0000]
+  n= 1000: Cauchy empirical P(|Xbar|>1) = 0.4978  (theory 0.5000)   [for N(0,1) data it would be 0.0000]
+
+========================================================================
+5.3 chi-square_1 from Z^2, and F -> Beta relation
+========================================================================
+  Z^2: mean=1.0072 (1)  var=2.0302 (2)  P(Z^2<=1)=0.6808  (P(|Z|<=1)=0.6827)
+  Y=(p/q)F/(1+(p/q)F), p=3,q=10: mean=0.2303 (Beta(1.5,5): 0.2308)  var=0.02357 (0.02367)
+
+========================================================================
+5.3 Coverage of 'xbar +/- c * s/sqrt(n)' for N(0,1) data: z=1.96 versus the t critical value
+========================================================================
+  n=  3: coverage with z=1.96: 0.8108    with t_(.975,2)=4.303: 0.9496   (nominal 0.95)
+  n=  5: coverage with z=1.96: 0.8790    with t_(.975,4)=2.776: 0.9497   (nominal 0.95)
+  n= 10: coverage with z=1.96: 0.9181    with t_(.975,9)=2.262: 0.9500   (nominal 0.95)
+  n= 30: coverage with z=1.96: 0.9414    with t_(.975,29)=2.045: 0.9506   (nominal 0.95)
+
+========================================================================
+5.4 Order statistics of Uniform(0,1): range ~ Beta(n-1,2), median(n odd) ~ Beta((n+1)/2,(n+1)/2)
+========================================================================
+  range of n=10: mean=0.8178 (Beta(9,2): 0.8182)  var=0.01247 (0.01240)
+  median of n=11: mean=0.4997 (0.5)  var=0.01918 (Beta(6,6): 0.01923)
+
+========================================================================
+5.5 Slutsky in action: coverage of the NOMINAL-95% t interval for the mean of Exp(1) data
+========================================================================
+  n=  10: coverage = 0.9045
+  n=  30: coverage = 0.9277
+  n= 100: coverage = 0.9431
+
+========================================================================
+5.5 Second-order delta method: X_i~Bernoulli(1/2), g(p)=p(1-p), g'(1/2)=0
+========================================================================
+  n= 100: mean of n(g(Xbar)-1/4) = -0.2506 (theory -0.25)   var = 0.1235 (limit 1/8 = 0.125)   P(-4V<=3.841) = 0.9427 (chi2_1: 0.9500)
+  n= 400: mean of n(g(Xbar)-1/4) = -0.2494 (theory -0.25)   var = 0.1248 (limit 1/8 = 0.125)   P(-4V<=3.841) = 0.9491 (chi2_1: 0.9500)
+
+========================================================================
+5.6.2 Box-Muller (direct) and Poisson via exponential inter-arrival times (indirect)
+========================================================================
+  Box-Muller Z1: mean=+0.0026 var=1.0015  P(|Z1|<1.96)=0.9500 (0.9500)  cov(Z1,Z2)=+0.0029
+  Poisson(3) via arrivals in [0,1]: mean=2.9968 var=2.9922 (both 3)
+   k | empirical pmf | Poisson(3) pmf
+   0 |    0.0497     |   0.0498
+   1 |    0.1498     |   0.1494
+   2 |    0.2242     |   0.2240
+   3 |    0.2244     |   0.2240
+   4 |    0.1679     |   0.1680
+   5 |    0.1008     |   0.1008
+
+========================================================================
+5.6 Monte Carlo error: estimate pi by 4*P(U1^2+U2^2<=1); SE should shrink like 1/sqrt(N)
+========================================================================
+  N=   100: mean estimate=3.1309   empirical SE=0.16978   theory 0.16422
+  N=  1000: mean estimate=3.1381   empirical SE=0.05170   theory 0.05193
+  N= 10000: mean estimate=3.1421   empirical SE=0.01637   theory 0.01642
+  N=100000: mean estimate=3.1423   empirical SE=0.00504   theory 0.00519

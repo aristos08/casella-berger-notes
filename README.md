@@ -18,7 +18,7 @@ Each chapter also has a **LaTeX twin** (`site/chNN/chNN.tex`) — paste into [Ov
 | Chapter | Title | Status |
 |---------|-------|--------|
 | 5 | Properties of a Random Sample | ✅ complete |
-| 6 | Principles of Data Reduction | ⬜ skeleton |
+| 6 | Principles of Data Reduction | ✅ complete |
 | 7 | Point Estimation | ⬜ skeleton |
 | 8 | Hypothesis Testing | ⬜ skeleton |
 | 9 | Interval Estimation | ⬜ skeleton |
@@ -35,6 +35,8 @@ Every *Simulation Check* box in the notes reports real output from the seeded, p
 ```sh
 python3 simulations/sim_ch5.py
 python3 simulations/sim_ch5_part2.py
+python3 simulations/sim_ch5_extra.py
+python3 simulations/sim_ch6.py
 ```
 
 (No third-party dependencies — only `random`, `math`, `statistics`.)
