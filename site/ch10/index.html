@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ch.10 Asymptotic Evaluations &mdash; C&amp;B Course Notes</title>
 <link rel="stylesheet" href="../assets/style.css">
-<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']],tags:'none'}};</script>
+<script>
+MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']], tags: 'none' } };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
@@ -16,31 +18,395 @@
   <a class="chip done" href="../ch07/index.html">7</a>
   <a class="chip done" href="../ch08/index.html">8</a>
   <a class="chip done" href="../ch09/index.html">9</a>
-  <a class="chip current" href="../ch10/index.html">10</a>
+  <a class="chip current done" href="../ch10/index.html">10</a>
   <a class="chip" href="../ch11/index.html">11</a>
   <a class="chip" href="../ch12/index.html">12</a>
 </nav>
 <main>
 <h1>Chapter 10 &mdash; Asymptotic Evaluations
-<span class="subtitle">Consistency, efficiency, bootstrap, robustness, M-estimators, and large-sample tests &amp; intervals</span>
+<span class="subtitle">Why maximum likelihood wins in the limit, and how badly the limit can mislead</span>
 </h1>
 
-<div class="todo-banner"><strong>Not yet written.</strong> Scaffolded with full section structure. Prompt &ldquo;do chapter 10&rdquo; (or specific sections) to fill in proofs, intuition, and seeded simulations at the Chapter 5 standard.</div>
+<p class="lead">Every chapter so far has deferred something to this one. Chapter 7 said the MLE's justification is asymptotic; Chapter 8 said $-2\log\lambda$ has a $\chi^2$ limit; Chapter 9 found a "95%" interval with minimum coverage $0.0198$ and left it unexplained. All three debts are settled here. The chapter also has a second, equally important theme: asymptotic optimality is a statement about a limit, and the rate at which the limit is approached is a separate question that the theory does not answer.</p>
 
+<!-- ============================= 10.1 ============================= -->
 <h2>&sect;10.1 Point Estimation</h2>
+
 <h3>&sect;10.1.1 Consistency</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+A sequence of estimators $W_n$ is <em>consistent</em> for $\theta$ if $W_n\xrightarrow{P}\theta$ for every $\theta\in\Theta$. It is <em>strongly consistent</em> if the convergence is almost sure.
+</div>
+
+<div class="box thm">
+<span class="label">Proposition (the easy sufficient condition).</span>
+If $\mathrm{Bias}_\theta(W_n)\to0$ and $\mathrm{Var}_\theta(W_n)\to0$ for every $\theta$, then $W_n$ is consistent.
+<p class="proof-label">Proof.</p>
+By the bias&ndash;variance decomposition (&sect;7.3.1), $\mathrm{MSE}(\theta,W_n)=\mathrm{Var}_\theta(W_n)+\mathrm{Bias}_\theta(W_n)^2\to0$, and Chebyshev gives
+$$P_\theta\big(|W_n-\theta|\gt\varepsilon\big)\le\frac{\mathrm{MSE}(\theta,W_n)}{\varepsilon^2}\to0 . \qquad\blacksquare$$
+<br>Consistency is therefore cheap: the WLLN makes $\bar X_n$ consistent for $\mu$, continuous mapping (&sect;5.5.3) extends that to any continuous function of moments, and &sect;7.2.1 used exactly this to get consistency of method-of-moments estimators.
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (consistency of the MLE &mdash; the argument, with its gap marked).</span>
+Let $X_i$ be iid $f(x\mid\theta_0)$, and suppose the model is identifiable. The key inequality is that the expected log-likelihood is <em>uniquely maximized at the truth</em>: for $\theta\ne\theta_0$,
+$$E_{\theta_0}\big[\log f(X\mid\theta)\big]\;\lt\;E_{\theta_0}\big[\log f(X\mid\theta_0)\big].$$
+<p class="proof-label">Proof of the inequality.</p>
+The difference is a Kullback&ndash;Leibler divergence. By Jensen's inequality applied to the strictly concave $\log$,
+$$E_{\theta_0}\left[\log\frac{f(X\mid\theta)}{f(X\mid\theta_0)}\right]\le\log E_{\theta_0}\left[\frac{f(X\mid\theta)}{f(X\mid\theta_0)}\right]=\log\int f(x\mid\theta)\,dx=\log 1=0,$$
+with equality iff the ratio is constant a.s., i.e. iff $f(\cdot\mid\theta)=f(\cdot\mid\theta_0)$ a.e., which identifiability excludes. <span class="qed">&#8718;</span>
+<p>Now the heuristic that this makes rigorous: by the WLLN, for each fixed $\theta$
+$$\frac1n\ell_n(\theta)=\frac1n\sum_i\log f(X_i\mid\theta)\;\xrightarrow{P}\;E_{\theta_0}\big[\log f(X\mid\theta)\big],$$
+a function maximized uniquely at $\theta_0$. So the random objective converges pointwise to a limit whose maximizer is the truth, and one expects $\hat\theta_n\xrightarrow{P}\theta_0$.</p>
+</div>
+
+<div class="flag">
+<span class="label">Flag &mdash; pointwise convergence does not by itself give consistency.</span>
+The step from "$\frac1n\ell_n(\theta)\to$ limit for each fixed $\theta$" to "the <em>argmax</em> converges" is not automatic, and the gap is real: a sequence of functions can converge pointwise while their maximizers run off elsewhere. Closing it needs a uniform law of large numbers over $\theta$ (plus compactness, or a condition keeping the likelihood from escaping to the boundary) &mdash; Wald's 1949 conditions, or the modern empirical-process treatment. I have proved the information inequality that makes the argument work and stated the rest honestly: <strong>this page does not prove MLE consistency</strong>. Note also that it genuinely fails in some models &mdash; the normal-mixture likelihood of &sect;7.2.4 is unbounded, so there is no MLE at all to be consistent.
+</div>
+
 <h3>&sect;10.1.2 Efficiency</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+$W_n$ is <em>asymptotically efficient</em> for $\theta$ if
+$$\sqrt n\,(W_n-\theta)\;\xrightarrow{d}\;N\!\left(0,\;\frac{1}{I_1(\theta)}\right),$$
+where $I_1$ is the Fisher information in one observation (&sect;7.3.2). The limiting variance is the Cram&eacute;r&ndash;Rao bound, so no estimator can do asymptotically better in this sense.
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (asymptotic normality and efficiency of the MLE).</span>
+Under regularity conditions &mdash; $\hat\theta_n$ consistent, $\theta_0$ interior to $\Theta$, $\log f$ three-times differentiable with the information finite and the usual interchange of derivative and integral valid &mdash;
+$$\sqrt n\,(\hat\theta_n-\theta_0)\;\xrightarrow{d}\;N\!\left(0,\tfrac{1}{I_1(\theta_0)}\right).$$
+<p class="proof-label">Proof.</p>
+Since $\theta_0$ is interior and $\hat\theta_n$ maximizes $\ell_n$, eventually $\ell_n'(\hat\theta_n)=0$. Expand the score about $\theta_0$ with a mean-value remainder: for some $\tilde\theta_n$ between $\hat\theta_n$ and $\theta_0$,
+$$0=\ell_n'(\hat\theta_n)=\ell_n'(\theta_0)+(\hat\theta_n-\theta_0)\,\ell_n''(\tilde\theta_n).$$
+Solving and scaling by $\sqrt n$,
+$$\sqrt n\,(\hat\theta_n-\theta_0)=\frac{\ell_n'(\theta_0)/\sqrt n}{-\ell_n''(\tilde\theta_n)/n}.$$
+<em>Numerator.</em> $\ell_n'(\theta_0)=\sum_iS_i$ where $S_i=\partial_\theta\log f(X_i\mid\theta_0)$ are iid with $E[S_i]=0$ and $\mathrm{Var}(S_i)=I_1(\theta_0)$ (both established in &sect;7.3.2). The CLT gives
+$$\frac{1}{\sqrt n}\sum_iS_i\;\xrightarrow{d}\;N\big(0,I_1(\theta_0)\big).$$
+<em>Denominator.</em> $-\ell_n''(\theta_0)/n$ is an average of iid terms $-\partial^2_\theta\log f(X_i\mid\theta_0)$ with mean $I_1(\theta_0)$ (the second information identity), so by the WLLN it converges in probability to $I_1(\theta_0)$. Since $\hat\theta_n\xrightarrow{P}\theta_0$ forces $\tilde\theta_n\xrightarrow{P}\theta_0$, the regularity conditions let us replace $\tilde\theta_n$ by $\theta_0$ with an $o_P(1)$ error, so the denominator also $\xrightarrow{P}I_1(\theta_0)$.
+<em>Combine.</em> By Slutsky (&sect;5.5.3),
+$$\sqrt n\,(\hat\theta_n-\theta_0)\xrightarrow{d}\frac{N(0,I_1(\theta_0))}{I_1(\theta_0)}=N\!\left(0,\tfrac{1}{I_1(\theta_0)}\right). \qquad\blacksquare$$
+</div>
+
+<div class="box remark">
+<span class="label">What the proof reveals.</span>
+Every tool from Chapter 5 appears exactly once: CLT on the score, WLLN on the curvature, Slutsky to divide, continuous mapping inside the regularity step. And the <em>reason</em> the MLE is efficient is now visible &mdash; the asymptotic variance is $\mathrm{Var}(\text{score})/\big(E[\text{curvature}]\big)^2$, and the two information identities make numerator and denominator the same quantity $I_1$, so one factor cancels. For any other estimating equation those two quantities differ, and the ratio is strictly larger: that is exactly the M-estimator variance formula in &sect;10.2.2.
+</div>
+
+<div class="box remark">
+<span class="label">Invariance, via the delta method.</span>
+Combining with &sect;5.5.4: if $\sqrt n(\hat\theta_n-\theta)\xrightarrow{d}N(0,1/I_1(\theta))$ and $\tau$ is differentiable with $\tau'(\theta)\ne0$, then
+$$\sqrt n\big(\tau(\hat\theta_n)-\tau(\theta)\big)\xrightarrow{d}N\!\left(0,\frac{[\tau'(\theta)]^2}{I_1(\theta)}\right),$$
+and the limiting variance is precisely the Cram&eacute;r&ndash;Rao bound for $\tau(\theta)$. So the MLE of <em>any</em> smooth function of $\theta$ is asymptotically efficient for it &mdash; which, combined with the exact invariance of &sect;7.2.2, is the real reason maximum likelihood is the default.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; asymptotic efficiency does not mean finite-sample optimality</div>
+<p>Estimating $\tau=e^{-\lambda}$ from iid $\mathrm{Poisson}(\lambda)$, $\lambda=1$. The MLE is $e^{-\bar X}$ (invariance); Chapter 7 derived the UMVUE $((n-1)/n)^T$. Both moment calculations are exact in closed form:</p>
+<pre>  n   | E[MLE]   bias    Var(MLE)  MSE(MLE) | MSE(UMVUE) |  CRLB    | MSE/CRLB
+    5 | 0.40400 +0.03612 0.029143 0.030448 |  0.029964 | 0.027067 |  1.1249
+   10 | 0.38611 +0.01823 0.014131 0.014463 |  0.014233 | 0.013534 |  1.0687
+   40 | 0.37247 +0.00459 0.003424 0.003445 |  0.003426 | 0.003383 |  1.0184
+  200 | 0.36880 +0.00092 0.000678 0.000679 |  0.000678 | 0.000677 |  1.0037
+ 1000 | 0.36806 +0.00018 0.000135 0.000135 |  0.000135 | 0.000135 |  1.0007
+
+simulation check at n=10 (200,000 reps):
+   E[MLE]=0.38617 (exact 0.38611)   Var=0.014100 (exact 0.014131)</pre>
+<p>The MLE is biased upward and is <em>beaten</em> by the UMVUE at every $n$ shown, though only in the fourth decimal. Both ratios to the CRLB march to $1$. Asymptotic efficiency is a statement about the limit; at $n=5$ the MLE carries $12\%$ more MSE than the bound.</p>
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the limit law, and how slowly it arrives</div>
+<p>$X_i$ iid exponential with rate $\theta=2$. The MLE is $1/\bar X$, $I_1(\theta)=1/\theta^2$, so the asymptotic variance is $\theta^2=4$. Exact finite-$n$ moments are available ($E[1/\bar X]=n\theta/(n-1)$, $\mathrm{Var}=n^2\theta^2/((n-1)^2(n-2))$):</p>
+<pre>  n    | sim mean sqrt(n)*bias | exact  | sim n*Var | exact n*Var | limit | P(|.|<1.96se)
+   10  |       +0.6781         | +0.7027|  5.9734   |   6.1728    |  4.0  |    0.9063
+   50  |       +0.3036         | +0.2886|  4.4111   |   4.3385    |  4.0  |    0.9387
+  200  |       +0.1399         | +0.1421|  4.0527   |   4.0811    |  4.0  |    0.9479
+ 1000  |       +0.0753         | +0.0633|  3.9944   |   4.0160    |  4.0  |    0.9503</pre>
+<p>At $n=10$ the true variance exceeds the limit by $54\%$ and the nominal $95\%$ interval covers $90.6\%$. Monte Carlo error is larger here than elsewhere on this page because $1/T$ is heavy-tailed at small $n$ &mdash; which is why I computed the exact columns and advise trusting those.</p>
+</div>
+
 <h3>&sect;10.1.3 Calculations and Comparisons</h3>
+
+<div class="box def">
+<span class="label">Definition (asymptotic relative efficiency).</span>
+If $\sqrt n(W_n-\theta)\xrightarrow{d}N(0,\sigma_W^2)$ and $\sqrt n(V_n-\theta)\xrightarrow{d}N(0,\sigma_V^2)$, the ARE of $W$ relative to $V$ is $\sigma_V^2/\sigma_W^2$. An ARE of $0.5$ means $W$ needs twice the sample size to match $V$.
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (asymptotic law of the sample median).</span>
+Let $X_i$ be iid with cdf $F$ and a density $f$ continuous and positive at the median $m$. Then
+$$\sqrt n\,(\hat m_n-m)\;\xrightarrow{d}\;N\!\left(0,\;\frac{1}{4f(m)^2}\right).$$
+<p class="proof-label">Proof sketch.</p>
+Fix $t$ and let $p_n=P\big(\sqrt n(\hat m_n-m)\le t\big)=P\big(\hat m_n\le m+t/\sqrt n\big)$. The median is $\le c$ exactly when at least half the observations are $\le c$, so with $B_n=\#\{i:X_i\le m+t/\sqrt n\}\sim\mathrm{Binomial}(n,p)$ and $p=F(m+t/\sqrt n)$,
+$$p_n=P\big(B_n\ge n/2\big).$$
+A Taylor expansion gives $p=\tfrac12+f(m)t/\sqrt n+o(n^{-1/2})$, so $B_n$ has mean $n/2+\sqrt n f(m)t+o(\sqrt n)$ and variance $n/4+o(n)$. Standardizing $B_n$ and applying the CLT,
+$$P(B_n\ge n/2)\to\Phi\big(2f(m)\,t\big),$$
+which is the cdf of $N\big(0,1/(4f(m)^2)\big)$ at $t$. <span class="qed">&#8718;</span>
+<br>(The step treating $o(\cdot)$ terms as negligible inside the CLT is where a fully rigorous proof needs more care; the standard route is via the order-statistic representation of &sect;5.4.)
+</div>
+
+<div class="box remark">
+<span class="label">The comparison, and why it flips.</span>
+The mean has asymptotic variance $\sigma^2$; the median has $1/(4f(m)^2)$. So everything depends on how much mass sits <em>near the centre</em> versus in the tails:
+<ul>
+<li><strong>Normal$(\mu,\sigma^2)$.</strong> $f(\mu)=1/(\sigma\sqrt{2\pi})$, so the median's variance is $\pi\sigma^2/2$ and $\mathrm{ARE}(\text{median},\text{mean})=2/\pi\approx0.6366$: the median wastes $36\%$ of the data.</li>
+<li><strong>Laplace$(\mu,b)$.</strong> Here $\mathrm{Var}=2b^2$ while $f(\mu)=1/(2b)$ gives median variance $b^2$. The ARE is $2$: the median is <em>twice</em> as efficient, and indeed it is the MLE for this model.</li>
+</ul>
+Neither estimator dominates &mdash; the answer is a property of the tails, not of the estimators.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; ARE in both directions</div>
+<p>$40{,}000$ reps per cell:</p>
+<pre>Normal(0,1)   theory var(mean)/var(median) = 2/pi = 0.6366
+   n=  11: var(mean)=0.09091  var(median)=0.13723  ratio=0.6624
+   n=  51: var(mean)=0.01953  var(median)=0.03040  ratio=0.6425
+   n= 201: var(mean)=0.00500  var(median)=0.00783  ratio=0.6378
+
+Laplace(0,b=1)  theory ratio = 2.0000
+   n=  11: var(mean)=0.18270  var(median)=0.13925  ratio=1.3121
+   n=  51: var(mean)=0.03987  var(median)=0.02434  ratio=1.6380
+   n= 201: var(mean)=0.01007  var(median)=0.00557  ratio=1.8076</pre>
+<p>The normal case has essentially converged by $n=51$. The Laplace case is still climbing at $n=201$ ($1.81$ against a limit of $2$) &mdash; the median's asymptotic approximation converges noticeably more slowly, because its limit theorem rests on a local density estimate rather than a sum.</p>
+</div>
+
 <h3>&sect;10.1.4 Bootstrap Standard Errors</h3>
+
+<div class="box def">
+<span class="label">The idea.</span>
+We want the sampling sd of $\hat\theta=T(X_1,\dots,X_n)$, which depends on the unknown $F$. The bootstrap substitutes the empirical cdf $\hat F_n$ for $F$ and computes the resulting sd &mdash; the <em>plug-in principle</em>. In practice: draw $B$ resamples of size $n$ with replacement from the observed data, recompute $T$ on each, and take the sample sd of those $B$ values.
+</div>
+
+<div class="box remark">
+<span class="label">Two approximations, only one of which $B$ controls.</span>
+The bootstrap SE involves (i) replacing $F$ by $\hat F_n$ and (ii) approximating the resulting resampling expectation by $B$ Monte Carlo draws. Taking $B$ large removes (ii) entirely &mdash; it is just computation &mdash; but does nothing about (i), which is the statistical approximation and the one that can fail. Conflating them is the most common bootstrap misconception.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; it works, with no formula required</div>
+<p>$n=25$ from $N(0,1)$, $B=400$ resamples, $400$ outer replications:</p>
+<pre>  mean  : mean bootstrap SE = 0.1955   actual sd of statistic = 0.2032   theory 0.2000
+  median: mean bootstrap SE = 0.2574   actual sd of statistic = 0.2504   theory   --</pre>
+<p>For the mean there is a formula to check against; for the median there is not (the delta method would need $f$ at the median, as in &sect;10.1.3). The bootstrap delivers a usable SE for both without knowing either.</p>
+</div>
+
+<div class="box thm">
+<span class="label">Where the bootstrap fails: extremes.</span>
+Let $X_i$ be iid $\mathrm{Uniform}(0,\theta)$, so $X_{(n)}$ is the MLE. The probability that a single bootstrap resample even <em>contains</em> the observed maximum is
+$$1-\Big(1-\frac1n\Big)^n\;\longrightarrow\;1-e^{-1}\approx0.6321 .$$
+Hence the bootstrap distribution of $X^*_{(n)}$ puts an atom of mass $\approx0.632$ on the observed $X_{(n)}$, i.e. the bootstrapped pivot has a point mass at $0$. But the true limit is continuous: $n\big(\theta-X_{(n)}\big)/\theta\xrightarrow{d}\mathrm{Exponential}(1)$. So the bootstrap approximates a continuous law by one with a $0.63$ atom &mdash; it converges to the wrong thing, and no increase in $B$ or $n$ repairs it.
+<p class="proof-label">Proof of the limit law.</p>
+$P\big(n(\theta-X_{(n)})/\theta\gt t\big)=P\big(X_{(n)}\lt\theta(1-t/n)\big)=(1-t/n)^n\to e^{-t}$ for $t\in(0,n)$, using $P(X_{(n)}\le x)=(x/\theta)^n$ from &sect;5.1. <span class="qed">&#8718;</span>
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the spurious atom</div>
+<pre>n=50: P(a bootstrap resample contains the sample max) = 0.6347
+      exact 1-(1-1/n)^n = 0.6358      limit 1-1/e = 0.6321
+
+true pivot      n(theta - X_(n)):  P(=0) = 0.0000   median = 0.6909
+                                   (Exponential(1) median = log 2 = 0.6931)
+bootstrap pivot n(X_(n) - X*_(n)): P(=0) = 0.6328   <- a point mass that should not exist</pre>
+<p>The true pivot's simulated median matches $\log 2$ to three decimals, confirming the Exponential$(1)$ limit; the bootstrap version is $63\%$ concentrated at a single point. The general lesson: the bootstrap needs the functional to be <em>smooth</em> in $F$, and maxima, minima and boundary parameters are not. Remedies exist (the $m$-out-of-$n$ bootstrap, subsampling) but they change the procedure.</p>
+</div>
+
+<!-- ============================= 10.2 ============================= -->
 <h2>&sect;10.2 Robustness</h2>
+
 <h3>&sect;10.2.1 The Mean and the Median</h3>
+
+<div class="box def">
+<span class="label">Definition (breakdown point).</span>
+The <em>breakdown point</em> of an estimator is the smallest fraction of the sample that, if replaced by arbitrary values, can drive the estimate to an arbitrary value. The mean has breakdown point $0$ (one observation sent to $\infty$ drags $\bar X$ with it); the median has $1/2$; the $\alpha$-trimmed mean has $\alpha$.
+</div>
+
+<div class="box remark">
+<span class="label">Efficiency and robustness are different axes.</span>
+&sect;10.1.3 compared estimators <em>within</em> a correctly specified model. Robustness asks what happens when the model is slightly wrong &mdash; the realistic situation. A standard caricature is the contaminated normal $(1-\varepsilon)N(0,1)+\varepsilon N(0,\sigma_c^2)$ with $\sigma_c$ large, which has the right shape in the middle and far too much mass in the tails. The mean's variance is a weighted average that the contamination dominates: $\mathrm{Var}=(1-\varepsilon)+\varepsilon\sigma_c^2$, which at $\varepsilon=0.1,\sigma_c=10$ is $0.9+10=10.9$, nearly $11\times$ the uncontaminated value.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; 10% contamination, $n=50$</div>
+<p>Data $0.9\,N(0,1)+0.1\,N(0,100)$, true centre $0$, $60{,}000$ reps:</p>
+<pre>  mean        : MSE = 0.21873   sd = 0.46769
+  median      : MSE = 0.03745   sd = 0.19352
+  20% trimmed : MSE = 0.02939   sd = 0.17144
+
+(with no contamination, the mean's MSE would be 1/n = 0.0200)</pre>
+<p>The mean's MSE is inflated by a factor of $11$, exactly as the variance calculation predicts, while the median and trimmed mean are barely affected. Note the reversal against &sect;10.1.3: under clean normality the median was $36\%$ worse than the mean; under $10\%$ contamination it is almost $6\times$ better. Choosing the mean is an implicit bet that the tails are exactly right.</p>
+</div>
+
 <h3>&sect;10.2.2 M-Estimators</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+Given a function $\psi$, an <em>M-estimator</em> $\hat\theta_M$ solves
+$$\sum_{i=1}^n\psi\big(X_i-\hat\theta_M\big)=0 .$$
+Taking $\psi(u)=u$ gives the mean; $\psi(u)=\mathrm{sign}(u)$ gives the median; $\psi=\partial_\theta\log f$ gives the MLE. <strong>Huber's</strong> choice interpolates between the first two:
+$$\psi_k(u)=\max\{-k,\ \min\{k,\ u\}\},$$
+linear in the middle and bounded outside, so a single wild observation has bounded influence.
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (asymptotic variance of an M-estimator).</span>
+Under regularity, with $\theta_0$ the solution of $E_{\theta_0}\psi(X-\theta_0)=0$,
+$$\sqrt n\big(\hat\theta_M-\theta_0\big)\xrightarrow{d}N\!\left(0,\;\frac{E\big[\psi(X-\theta_0)^2\big]}{\big(E\big[\psi'(X-\theta_0)\big]\big)^2}\right).$$
+<p class="proof-label">Proof.</p>
+The identical Taylor argument as for the MLE. Write $\Psi_n(\theta)=\sum_i\psi(X_i-\theta)$, so $\Psi_n(\hat\theta_M)=0$, and expand about $\theta_0$:
+$$0=\Psi_n(\theta_0)+(\hat\theta_M-\theta_0)\,\Psi_n'(\tilde\theta),$$
+giving
+$$\sqrt n(\hat\theta_M-\theta_0)=\frac{\Psi_n(\theta_0)/\sqrt n}{-\Psi_n'(\tilde\theta)/n}.$$
+The numerator is $n^{-1/2}\sum_i\psi(X_i-\theta_0)$, an average of iid mean-zero terms, so the CLT gives $N\big(0,E[\psi^2]\big)$. The denominator is an average converging in probability to $-E[\psi'(X-\theta_0)]\cdot(-1)=E[\psi']$ by the WLLN plus consistency. Slutsky finishes. <span class="qed">&#8718;</span>
+<br>Compare the MLE: there $\psi=$ score, and the two information identities make $E[\psi^2]=E[\psi']=I_1$, so the ratio collapses to $1/I_1$. For any other $\psi$ the numerator and denominator are genuinely different and the variance is strictly larger at the model &mdash; the precise price of robustness.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; where Huber's $k=1.345$ comes from</div>
+<p>For $\psi_k$ at the standard normal, $E[\psi_k']=2\Phi(k)-1$ and $E[\psi_k^2]=2\Phi(k)-1-2k\varphi(k)+2k^2(1-\Phi(k))$:</p>
+<pre>k=1.345:  E[psi^2]=0.71016   E[psi']=0.82137   avar=1.05263   ARE vs mean = 0.9500
+
+normal data:  n= 20: n*var(Huber)=1.0326 (limit 1.0526)  n*var(mean)=0.9853 (limit 1)
+              n=100: n*var(Huber)=1.0568 (limit 1.0526)  n*var(mean)=1.0068 (limit 1)
+              n=400: n*var(Huber)=1.0625 (limit 1.0526)  n*var(mean)=1.0067 (limit 1)
+
+contaminated (n=50, 10% from N(0,100)):
+   MSE Huber = 0.02908    mean = 0.21736    median = 0.03747</pre>
+<p>The constant $1.345$ is reverse-engineered to give exactly $95\%$ efficiency at the normal &mdash; the computed ARE is $0.9500$ &mdash; and under contamination Huber beats both the mean ($7.5\times$) and the median. That is the entire design goal of robust statistics: give up $5\%$ at the ideal model to buy a large margin against the model being wrong.</p>
+</div>
+
+<!-- ============================= 10.3 ============================= -->
 <h2>&sect;10.3 Hypothesis Testing</h2>
+
 <h3>&sect;10.3.1 Asymptotic Distribution of LRTs</h3>
+
+<div class="box thm">
+<span class="label">Theorem (Wilks).</span>
+For testing $H_0:\theta=\theta_0$ against $H_1:\theta\ne\theta_0$ in a one-parameter regular model, under $H_0$
+$$-2\log\lambda(X)\;\xrightarrow{d}\;\chi^2_1 .$$
+More generally, if $H_0$ constrains $r$ free parameters out of $p$, the limit is $\chi^2_r$.
+<p class="proof-label">Proof (the one-parameter case).</p>
+Since $\hat\theta$ maximizes $\ell_n$ and $\lambda=L(\theta_0)/L(\hat\theta)$,
+$$-2\log\lambda=2\big[\ell_n(\hat\theta)-\ell_n(\theta_0)\big].$$
+Taylor-expand $\ell_n(\theta_0)$ about $\hat\theta$, using $\ell_n'(\hat\theta)=0$:
+$$\ell_n(\theta_0)=\ell_n(\hat\theta)+\tfrac12(\theta_0-\hat\theta)^2\ell_n''(\tilde\theta)+\cdots,$$
+so
+$$-2\log\lambda=-(\hat\theta-\theta_0)^2\,\ell_n''(\tilde\theta),$$
+which factors as
+$$\underbrace{\big[\sqrt n(\hat\theta-\theta_0)\big]^2}_{\xrightarrow{d}\;N(0,1/I_1)^2}\;\cdot\;\underbrace{\frac{-\ell_n''(\tilde\theta)}{n}}_{\xrightarrow{P}\;I_1(\theta_0)} .$$
+By &sect;10.1.2 the first factor converges in distribution to the square of a $N(0,1/I_1)$ variable and the second in probability to $I_1$. By continuous mapping and Slutsky the product converges to
+$$I_1\cdot\frac{1}{I_1}Z^2=Z^2\sim\chi^2_1,\qquad Z\sim N(0,1). \qquad\blacksquare$$
+</div>
+
+<div class="box remark">
+<span class="label">Why this result is the workhorse of applied modelling.</span>
+It requires no closed-form sampling distribution &mdash; only that you can maximize the likelihood twice, once under the constraint and once without. That is why "compare the deviances and look it up in a $\chi^2_r$ table" is the standard way to test nested logistic regressions, GLMs, and mixed models. The degrees of freedom $r$ counts constraints, which is also why it breaks when the constrained parameter sits on a boundary (variance components at zero), where the limit becomes a mixture of $\chi^2$'s rather than a $\chi^2$.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the $\chi^2_1$ limit, and what controls its accuracy</div>
+<p>Bernoulli, $H_0:p=p_0$, $100{,}000$ reps per cell, $\chi^2_{0.95,1}=3.8415$:</p>
+<pre>  p0   |   n   |  P(-2logL > c95)  |  mean(-2logL)   (limit 1.0)
+  0.50 |    10 |      0.1087       |     1.0589
+  0.50 |    25 |      0.0437       |     1.0216
+  0.50 |   100 |      0.0568       |     0.9989
+  0.50 |   500 |      0.0537       |     1.0051
+  0.10 |    10 |      0.0129       |     1.1751
+  0.10 |    25 |      0.1052       |     1.1136
+  0.10 |   100 |      0.0447       |     1.0197
+  0.10 |   500 |      0.0524       |     1.0050</pre>
+<p>The mean converges to $1$ smoothly, but the <em>tail</em> probability oscillates around $0.05$ rather than approaching it monotonically &mdash; the statistic is discrete, so the attainable rejection probabilities jump as $n$ changes. Note $p_0=0.1$ at $n=10$ gives $0.0129$ and at $n=25$ gives $0.1052$: the governing quantity is $np_0$ (expected successes), not $n$. The usual rule of thumb asks for at least $5$&ndash;$10$ expected counts in every cell, and that is what it is protecting.</p>
+</div>
+
 <h3>&sect;10.3.2 Other Large-Sample Tests</h3>
+
+<div class="box def">
+<span class="label">Three statistics with the same limit.</span>
+For $H_0:\theta=\theta_0$:
+$$\begin{aligned}\text{Wald:}&\quad W=\frac{(\hat\theta-\theta_0)^2}{1/\big(nI_1(\hat\theta)\big)},\\ \text{Score:}&\quad S=\frac{\big[\ell_n'(\theta_0)\big]^2}{nI_1(\theta_0)},\\ \text{LRT:}&\quad -2\log\lambda .\end{aligned}$$
+All three converge in distribution to $\chi^2_1$ under $H_0$ (the first two by &sect;10.1.2 and the CLT on the score respectively, the third by Wilks), so asymptotically they are equivalent.
+</div>
+
+<div class="box remark">
+<span class="label">The one structural difference &mdash; and it is the whole story.</span>
+Wald evaluates the variance <em>at the estimate</em> $\hat\theta$; the score statistic evaluates it <em>at the hypothesized</em> $\theta_0$. Under $H_0$ the score version uses the correct variance by construction, whereas Wald uses an estimate that is itself noisy and, worse, degenerate at the boundary: for a Bernoulli sample with $x=0$, $\hat p(1-\hat p)=0$ and the Wald statistic is $0/0$. Score tests also require no fitting of the alternative model, which is why they are preferred for screening many hypotheses.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; identical limits, very different finite-$n$ sizes</div>
+<p>Bernoulli, nominal $5\%$, two-sided. Sizes computed <strong>exactly</strong> by summation over $x$. At $x=0$ or $n$ the Wald statistic is $0/0$; the "Wald" column follows the usual convention of treating that as a rejection, while "Wald*" treats it as no decision, to separate the degeneracy from genuine distortion:</p>
+<pre>  p0   |   n   |   Wald   |  Wald*   |  Score   |   LRT    | P(x=0 or n)
+  0.50 |    20 |  0.0414  |  0.0414  |  0.0414  |  0.0414  |   0.0000
+  0.50 |    50 |  0.0649  |  0.0649  |  0.0649  |  0.0649  |   0.0000
+  0.50 |   200 |  0.0560  |  0.0560  |  0.0560  |  0.0560  |   0.0000
+  0.10 |    20 |  0.1240  |  0.0024  |  0.0432  |  0.1328  |   0.1216
+  0.10 |    50 |  0.1211  |  0.1159  |  0.0297  |  0.0583  |   0.0052
+  0.10 |   200 |  0.0729  |  0.0729  |  0.0439  |  0.0591  |   0.0000
+  0.03 |    20 |  0.5441  |  0.0003  |  0.0210  |  0.0210  |   0.5438
+  0.03 |    50 |  0.2188  |  0.0007  |  0.0628  |  0.0168  |   0.2181
+  0.03 |   200 |  0.0671  |  0.0649  |  0.0564  |  0.0347  |   0.0023</pre>
+<p>Reading the nine rows: <strong>Score</strong> stays within $[0.021,0.065]$; <strong>LRT</strong> ranges over $[0.017,0.133]$; <strong>Wald</strong> reaches $0.544$, almost entirely from the degenerate $x=0$ outcome (compare the last column). Excluding that, Wald* is not uniformly liberal but <em>erratic</em>, from $0.0003$ to $0.116$. At $p_0=0.5$ all three agree exactly. The reason is that each statistic is a strictly increasing function of $|x-n/2|$ there (for Wald, $|\hat p-\tfrac12|$ increases while $\hat p(1-\hat p)$ decreases, so the ratio increases), hence every rejection region has the form $\{|x-n/2|\ge c\}$; at these $n$ the three thresholds happen to select the same integer $c$. That is a coincidence of this symmetric case, not a general identity.</p>
+</div>
+
+<!-- ============================= 10.4 ============================= -->
 <h2>&sect;10.4 Interval Estimation</h2>
+
 <h3>&sect;10.4.1 Approximate Maximum Likelihood Intervals</h3>
+
+<div class="box remark">
+<span class="label">The construction, and its three variants.</span>
+Inverting each test of &sect;10.3.2 (by the duality of &sect;9.2.1) gives an approximate $1-\alpha$ interval:
+$$\begin{aligned}\text{Wald:}&\quad \hat\theta\pm\frac{z_{1-\alpha/2}}{\sqrt{n\,I_1(\hat\theta)}},\\ \text{Score:}&\quad \Big\{\theta_0:\;\big[\ell_n'(\theta_0)\big]^2\le z^2_{1-\alpha/2}\,nI_1(\theta_0)\Big\},\\ \text{LRT:}&\quad \big\{\theta_0:\;-2\log\lambda(\theta_0)\le\chi^2_{1-\alpha,1}\big\}.\end{aligned}$$
+Only the first has a closed form, which is exactly why it is the one in every textbook &mdash; and, as Chapter 9 found, the one that fails.
+</div>
+
+<div class="box thm">
+<span class="label">Proposition (the Wilson interval <em>is</em> the inverted score test).</span>
+For $X\sim\mathrm{Binomial}(n,p)$, inverting the score test gives
+$$\frac{\hat p+\frac{z^2}{2n}\;\pm\;z\sqrt{\frac{\hat p(1-\hat p)}{n}+\frac{z^2}{4n^2}}}{1+\frac{z^2}{n}},$$
+which is the Wilson interval of &sect;9.3.1.
+<p class="proof-label">Proof.</p>
+The score test accepts $p_0$ iff $n(\hat p-p_0)^2\le z^2p_0(1-p_0)$. Expanding and collecting powers of $p_0$:
+$$p_0^2(n+z^2)-p_0\big(2n\hat p+z^2\big)+n\hat p^2\le0 .$$
+This is an upward parabola in $p_0$, so the acceptance set is the interval between its roots. The quadratic formula gives roots
+$$p_0=\frac{2n\hat p+z^2\pm\sqrt{(2n\hat p+z^2)^2-4(n+z^2)n\hat p^2}}{2(n+z^2)},$$
+and the discriminant simplifies as
+$$(2n\hat p+z^2)^2-4(n+z^2)n\hat p^2=z^2\big(4n\hat p(1-\hat p)+z^2\big).$$
+Substituting and dividing numerator and denominator by $2n$ yields the displayed form. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">This closes the loop from Chapter 9.</span>
+Chapter 9 observed empirically that Wilson works and Wald does not, without explaining why. The reason is now exact: <em>Wilson is the score interval</em>, and the score statistic uses $p_0(1-p_0)$ &mdash; the variance that is correct under the hypothesis being tested &mdash; whereas Wald uses $\hat p(1-\hat p)$, which is noisy and collapses to zero at $x=0$ or $x=n$. One choice of where to evaluate a variance accounts for the entire difference between a usable interval and one with minimum coverage $0.0198$.
+</div>
+
 <h3>&sect;10.4.2 Other Large-Sample Intervals</h3>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; four intervals, exact coverage</div>
+<p>$n=20$, nominal $95\%$. The identity above verified numerically, then exact coverage by summation over $p$:</p>
+<pre>max |Wilson endpoint - inverted-score endpoint| over x=0..20:  4.441e-16
+
+  method            |  min cov  |  mean cov  |  mean length
+  Wald              |  0.0198   |   0.8467   |    0.3243
+  Score (Wilson)    |  0.8516   |   0.9532   |    0.3255
+  LRT-inverted      |  0.8233   |   0.9465   |    0.3220
+  Clopper-Pearson   |  0.9581   |   0.9770   |    0.3663</pre>
+<p>The identity holds to machine precision. On coverage, Score and LRT-inverted are both acceptable and cost essentially nothing in length relative to Wald; Clopper&ndash;Pearson buys its guarantee with $13\%$ more length; Wald is simply broken. Note that mean coverage alone would rank Wald at $0.847$ &mdash; it is the <em>minimum</em> over $p$ that exposes the failure, which is a general lesson about evaluating approximate procedures.</p>
+</div>
+
+<div class="flag">
+<span class="label">Flag &mdash; what "asymptotically valid" does and does not buy you.</span>
+All four intervals above are asymptotically correct: each one's coverage tends to $0.95$ as $n\to\infty$ for fixed $p\in(0,1)$. That statement is <em>true of the Wald interval too</em>, and it is nearly worthless, because the convergence is not uniform in $p$ &mdash; for any $n$ there are values of $p$ near the boundary where coverage is terrible. This is the single most important caveat in the chapter: an asymptotic justification is a limit statement at fixed parameter value, and real data come with a fixed $n$ and a possibly awkward parameter. Always check finite-sample behaviour over the whole parameter range you might actually encounter, as the exact-coverage computations here do.
+</div>
+
+<!-- ============================= wrap ============================= -->
+<h2>Where this leaves you</h2>
+<p>The debts are paid. The MLE is asymptotically normal with variance equal to the Cram&eacute;r&ndash;Rao bound &mdash; proved from the CLT on the score, the WLLN on the curvature, and Slutsky, with the two information identities supplying the cancellation that makes it efficient &mdash; and the delta method extends that efficiency to every smooth function of $\theta$. Wilks's theorem gives $-2\log\lambda\to\chi^2_r$, which is what makes likelihood-based testing possible in models with no closed-form distribution theory. And the Wald/score/LRT trio, identical in the limit, separates in practice by <em>where the variance is evaluated</em>, which is precisely the resolution of Chapter 9's Wald puzzle.</p>
+<p>The counterweight is just as important. Asymptotic efficiency did not make the MLE beat the UMVUE at $n=5$. The $\chi^2_1$ approximation is governed by $np_0$, not $n$. The median loses $36\%$ to the mean under normality and wins by $6\times$ under $10\%$ contamination, so efficiency comparisons are claims about tails. The bootstrap gives standard errors for functionals with no formula, and converges to the wrong law for a maximum. Chapters 11 and 12 now apply all of this to linear and nonlinear models, where the exact normal-theory results of Theorem 5.3.1 return and the asymptotics of this chapter take over wherever they run out.</p>
 
 <div class="pagenav">
   <a href="../ch09/index.html">&larr; 9. Interval Estimation</a>
