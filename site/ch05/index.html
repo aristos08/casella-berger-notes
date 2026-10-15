@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ch.5 Properties of a Random Sample &mdash; C&amp;B Course Notes</title>
+<link rel="stylesheet" href="../assets/style.css">
+<script>
+MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']], tags: 'none' } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<nav class="sidebar">
+  <a class="home" href="../index.html">C&amp;B &mdash; Statistical Inference</a>
+  <h2>Chapters</h2>
+  <ol>
+    <li><a class="current" href="../ch05/index.html">5. Properties of a Random Sample</a></li>
+    <li><a href="../ch06/index.html">6. Principles of Data Reduction</a></li>
+    <li><a href="../ch07/index.html">7. Point Estimation</a></li>
+    <li><a href="../ch08/index.html">8. Hypothesis Testing</a></li>
+    <li><a href="../ch09/index.html">9. Interval Estimation</a></li>
+    <li><a href="../ch10/index.html">10. Asymptotic Evaluations</a></li>
+    <li><a href="../ch11/index.html">11. ANOVA &amp; Regression</a></li>
+    <li><a href="../ch12/index.html">12. Regression Models</a></li>
+  </ol>
+</nav>
+<main>
+<h1>Chapter 5 &mdash; Properties of a Random Sample
+<span class="subtitle">Sums, normal sampling theory, order statistics, convergence, and random generation</span>
+</h1>
+
+<p class="lead">The pivot from "a random variable" to "a sample of them." Everything here is the study of the <em>sampling distribution</em> &mdash; the law of a statistic $T(X_1,\dots,X_n)$ &mdash; which is the object all of frequentist inference manipulates.</p>
+
+<!-- ============================= 5.1 ============================= -->
+<h2>&sect;5.1 Basic Concepts of Random Samples</h2>
+
+<div class="box def">
+<span class="label">Definition (Random sample, measure-theoretic).</span>
+$X_1,\dots,X_n$ is a <em>random sample</em> of size $n$ from a population with law $P_X$ on $(\mathbb{R},\mathcal{B})$ if the $X_i$ are mutually independent and each $X_i \sim P_X$. Equivalently, the joint law on $(\mathbb{R}^n,\mathcal{B}^n)$ is the product measure $P_X^{\otimes n}$. If $P_X$ has density/pmf $f$, the joint density is $\prod_{i=1}^n f(x_i)$ &mdash; this factorization <em>is</em> the content of the iid assumption, and it is the only thing that makes likelihoods multiply later (Chapter 7).
+</div>
+
+<div class="box def">
+<span class="label">Definition (Statistic).</span>
+A statistic $T = T(X_1,\dots,X_n)$ is any Borel-measurable function of the sample containing no unknown parameters. $T$ is itself a random variable; its law is the pushforward $P_X^{\otimes n} \circ T^{-1}$, called the <em>sampling distribution</em>.
+</div>
+
+<div class="box remark">
+<span class="label">Why this matters.</span>
+Frequentist inference rests entirely on computing (or approximating) sampling distributions. "iid" is a modeling idealization. Independence $\Rightarrow$ joint density factorizes $\Rightarrow$ MGFs multiply $\Rightarrow$ tractable sampling distributions; so knowing exactly what it buys tells you what breaks when violated:
+<ul>
+<li><strong>Time series / panel data</strong>: autocorrelation breaks independence; naive standard errors are typically too small (false confidence).</li>
+<li><strong>Clustered experiments</strong> (A/B test randomized by user, analyzed by session): correlated units inflate effective variance.</li>
+<li><strong>Distribution shift in ML</strong>: train/test "iid from the same $P_X$" breaks, so the sampling distribution of test error no longer applies.</li>
+<li><strong>de Finetti</strong> (pointer): exchangeability is strictly weaker than iid and is the natural Bayesian-hierarchical assumption &mdash; exchangeable sequences are mixtures of iid sequences.</li>
+</ul>
+Treating non-iid data as iid is the single most common applied-statistics error in industry. Keep this lens on throughout.
+</div>
+
+<!-- ============================= 5.2 ============================= -->
+<h2>&sect;5.2 Sums of Random Variables from a Random Sample</h2>
+
+<h3>Convolution, from first principles</h3>
+<p>If $X,Y$ are independent with densities $f_X,f_Y$, then $Z=X+Y$ has</p>
+$$F_Z(z) = \iint_{x+y\le z} f_X(x)f_Y(y)\,dx\,dy = \int_{-\infty}^{\infty} F_X(z-y)f_Y(y)\,dy,$$
+<p>and differentiating under the integral (dominated convergence, since $|\partial_z F_X(z-y)| = f_X(z-y)$ is integrable against $f_Y$) gives $f_Z = f_X * f_Y$. Correct but painful; the MGF is the workhorse.</p>
+
+<div class="box thm">
+<span class="label">Fact (MGF of a sum of independent variables).</span>
+If $X_1,\dots,X_n$ are independent, $M_{\sum X_i}(t) = \prod_{i=1}^n M_{X_i}(t)$.
+<p class="proof-label">Proof.</p>
+$M_{\sum X_i}(t) = E[\prod_i e^{tX_i}] = \prod_i E[e^{tX_i}]$, the second step being the defining factorization property of independence (Fubini/Tonelli on the product measure). <span class="qed">&#8718;</span>
+</div>
+
+<p>With the <strong>uniqueness theorem for MGFs</strong> (agreement on a neighborhood of $0$ $\Rightarrow$ equal laws), this yields <em>reproductive properties</em> for free:</p>
+
+<table class="data">
+<tr><th>iid components</th><th>sum $\sum_{i=1}^n X_i$</th></tr>
+<tr><td>Bernoulli$(p)$</td><td>Binomial$(n,p)$</td></tr>
+<tr><td>Poisson$(\lambda)$</td><td>Poisson$(n\lambda)$</td></tr>
+<tr><td>Gamma$(\alpha,\beta)$ [Exp $=$ Gamma$(1,\beta)$]</td><td>Gamma$(n\alpha,\beta)$</td></tr>
+<tr><td>$N(\mu,\sigma^2)$</td><td>$N(n\mu,\,n\sigma^2)$</td></tr>
+</table>
+<p>Each is two lines: write $M_{X_i}(t)$, raise to the $n$-th power, recognize the target, invoke uniqueness.</p>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$200{,}000$ draws of a sum of $5$ iid $\mathrm{Exp}(\text{rate}=1)$ (theory $\mathrm{Gamma}(5,1)$):</p>
+<pre>empirical mean = 4.9968   theory (mean = 5)
+empirical var  = 4.9736   theory (var  = 5)
+
+ bin mid | empirical density | Gamma(5,1) pdf
+  3.75   |     0.1937        |     0.1938
+  4.25   |     0.1967        |     0.1939
+  4.75   |     0.1834        |     0.1835</pre>
+<p>Sum of 20 iid Bernoulli$(0.3)$ vs Binomial$(20,0.3)$, $N=300{,}000$:</p>
+<pre> k | empirical pmf | Binomial(20,0.3)
+ 5 |    0.1795     |    0.1789
+ 6 |    0.1919     |    0.1916
+ 7 |    0.1634     |    0.1643</pre>
+</div>
+
+<!-- ============================= 5.3 ============================= -->
+<h2>&sect;5.3 Sampling from the Normal Distribution</h2>
+<p>The chapter's centerpiece: where you earn the right to use $t$- and $F$-tables for life.</p>
+
+<h3>&sect;5.3.1 Properties of $\bar X$ and $S^2$</h3>
+<p>Let $X_1,\dots,X_n$ iid $N(\mu,\sigma^2)$, $\bar X=\frac1n\sum X_i$, $S^2=\frac{1}{n-1}\sum(X_i-\bar X)^2$.</p>
+
+<div class="box thm">
+<span class="label">Theorem 5.3.1.</span>
+(a) $\bar X\sim N(\mu,\sigma^2/n)$. &nbsp; (b) $\bar X \perp S^2$. &nbsp; (c) $(n-1)S^2/\sigma^2 \sim \chi^2_{n-1}$.
+</div>
+
+<p>(a) is the &sect;5.2 reproductive property scaled by $1/n$. The content is (b),(c), proven together via orthogonal transformation.</p>
+
+<div class="box thm">
+<span class="proof-label">Proof of (b) and (c).</span>
+<p><strong>Step 1 (standardize).</strong> $Z_i=(X_i-\mu)/\sigma$ gives $Z\in\mathbb{R}^n$ with iid $N(0,1)$ coordinates and joint density $f_Z(z)=(2\pi)^{-n/2}e^{-\|z\|^2/2}$, which depends on $z$ <em>only through $\|z\|^2$</em>: the standard Gaussian measure on $\mathbb{R}^n$ is rotationally invariant. This is the engine.</p>
+<p><strong>Step 2 (rotate).</strong> Pick orthogonal $A$ ($AA'=I$) with first row $(\tfrac1{\sqrt n},\dots,\tfrac1{\sqrt n})$ (extend that unit vector to an ONB via Gram&ndash;Schmidt). Let $Y=AZ$. Change of variables $z=A'y$ has $|\det A'|=1$ and $\|z\|^2=\|A'y\|^2=y'AA'y=\|y\|^2$, so $f_Y(y)=(2\pi)^{-n/2}e^{-\|y\|^2/2}$ &mdash; identical form. Hence $Y_1,\dots,Y_n$ are themselves iid $N(0,1)$.</p>
+<p><strong>Step 3 (identify pieces).</strong> $Y_1=\tfrac1{\sqrt n}\sum Z_i=\sqrt n\,\bar Z$, and $\|Y\|^2=\|Z\|^2$, so
+$$\sum_{i=2}^n Y_i^2 = \sum_i Z_i^2 - n\bar Z^2 = \sum_i(Z_i-\bar Z)^2 = \sum_i\Big(\tfrac{X_i-\bar X}{\sigma}\Big)^2 = \frac{(n-1)S^2}{\sigma^2}$$
+($\mu$ cancels in the centered sum).</p>
+<p><strong>Step 4 (conclude).</strong></p>
+<ul>
+<li>$Y_2,\dots,Y_n$ iid $N(0,1)$ $\Rightarrow \sum_{i=2}^n Y_i^2\sim\chi^2_{n-1}$ (sum of squared standard normals $=$ $\mathrm{Gamma}(\tfrac{n-1}{2},2)=\chi^2_{n-1}$, a &sect;5.2 reproductive property). This is <strong>(c)</strong>.</li>
+<li>$Y_1$ depends only on $Y_1$; $(n-1)S^2/\sigma^2$ depends only on $(Y_2,\dots,Y_n)$. Mutual independence of the $Y_i$ $\Rightarrow$ functions of disjoint blocks are independent (disjoint blocks generate independent sub-&sigma;-algebras). $\bar X$ is an affine function of $Y_1$, so $\bar X\perp S^2$. This is <strong>(b)</strong>.</li>
+</ul>
+<p class="qed">&#8718;</p>
+</div>
+
+<div class="box remark">
+<span class="label">How special this is.</span>
+Independence of $\bar X$ and $S^2$ is a fingerprint of normality. <strong>Luk&aacute;cs (1942)</strong>: for iid $X_i$ with finite variance, $\bar X\perp S^2$ <em>only if</em> the $X_i$ are normal. (Weaker, easy: $\mathrm{Cov}(\bar X,S^2)=\mu_3/n$, zero for any symmetric population &mdash; necessary, not sufficient.) This previews <strong>Basu's theorem</strong> (Ch. 6), which explains such independence via completeness of a sufficient statistic.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$n=10$, $N(5,4)$, $300{,}000$ reps:</p>
+<pre>corr(Xbar, S^2)         = -0.0009     theory: exactly 0
+mean[(n-1)S^2/sigma^2]  =  8.985      theory chi2_9 mean = 9
+var [(n-1)S^2/sigma^2]  = 18.035      theory chi2_9 var  = 18
+var[Xbar]               =  0.4002     theory sigma^2/n   = 0.4000</pre>
+<p>Control &mdash; same experiment with iid $\mathrm{Exp}(1)$ instead of normal:</p>
+<pre>corr(Xbar, S^2) = 0.6992   -- strongly nonzero</pre>
+<p>The Luk&aacute;cs converse, numerically: drop normality and independence vanishes outright (corr $0.70$).</p>
+</div>
+
+<h3>&sect;5.3.2 Student's $t$ and Snedecor's $F$</h3>
+
+<div class="box def">
+<span class="label">Definition (constructions).</span>
+$$T_p := \frac{Z}{\sqrt{W/p}},\quad Z\sim N(0,1),\, W\sim\chi^2_p,\, Z\perp W \;\Rightarrow\; T_p\sim t_p;\qquad
+F_{p,q} := \frac{U/p}{V/q},\quad U\sim\chi^2_p,\, V\sim\chi^2_q,\, U\perp V.$$
+</div>
+
+<div class="box remark">
+<span class="label">Why this is exactly what inference needs.</span>
+For iid $N(\mu,\sigma^2)$: $\frac{\bar X-\mu}{\sigma/\sqrt n}\sim N(0,1)$ and $\frac{(n-1)S^2}{\sigma^2}\sim\chi^2_{n-1}$, independent. Dividing, $\sigma$ <em>cancels</em>:
+$$T=\frac{\bar X-\mu}{S/\sqrt n}=\frac{(\bar X-\mu)/(\sigma/\sqrt n)}{\sqrt{[(n-1)S^2/\sigma^2]/(n-1)}}\sim t_{n-1}.$$
+The $t$-test exists precisely because this is the unique construction producing a pivot (free of $\sigma$) from the two independent pieces of Thm 5.3.1.
+</div>
+
+<div class="box thm">
+<span class="label">Claim (the $t$ density).</span>
+$f_T(t)=\dfrac{\Gamma(\frac{p+1}{2})}{\Gamma(p/2)\sqrt{p\pi}}\big(1+\frac{t^2}{p}\big)^{-(p+1)/2}$.
+<p class="proof-label">Proof.</p>
+Transform $(z,w)\mapsto(t,w)$ via $z=t\sqrt{w/p}$; Jacobian $\partial z/\partial t=\sqrt{w/p}$. Then
+$$f_T(t)=\frac{1}{\sqrt{2\pi p}\,2^{p/2}\Gamma(p/2)}\int_0^\infty w^{(p-1)/2}\exp\!\Big(-\tfrac w2(1+\tfrac{t^2}{p})\Big)dw.$$
+With $a=\tfrac12(1+t^2/p)$ the integral is $\Gamma(\tfrac{p+1}{2})a^{-(p+1)/2}$; collecting constants gives the result. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+The $F$ density follows identically ($u=\tfrac pq fv$, integrate out $v$):
+$$f_F(f)=\frac{\Gamma(\frac{p+q}{2})}{\Gamma(p/2)\Gamma(q/2)}\Big(\tfrac pq\Big)^{p/2} f^{p/2-1}\Big(1+\tfrac pq f\Big)^{-(p+q)/2}.$$
+<strong>Moments:</strong> $E[T_p]=0$ ($p>1$), $\mathrm{Var}(T_p)=\frac{p}{p-2}$ ($p>2$); $E[F_{p,q}]=\frac{q}{q-2}$ ($q>2$). Heavier tails than Normal/$\chi^2$ &mdash; the price of an <em>unknown</em> denominator (not knowing $\sigma$).
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$n=10$ (df $9$), $400{,}000$ reps, $T=(\bar X-\mu)/(S/\sqrt n)$:</p>
+<pre>empirical mean       =  0.0018    theory 0
+empirical var        =  1.2904    theory df/(df-2) = 1.2857
+empirical 97.5th pct =  2.2720    table t_(.975,9) = 2.262</pre>
+<p>$F$ ($U\sim\chi^2_3,V\sim\chi^2_{10}$): mean $1.2497$ vs theory $q/(q-2)=1.25$. And $T_p^2\overset{d}{=}F_{1,p}$: $\mathrm{mean}(T^2)=1.2904$ vs direct $F_{1,9}$ sim $1.2840$ (both theory $1.2857$).</p>
+</div>
+
+<!-- ============================= 5.4 ============================= -->
+<h2>&sect;5.4 Order Statistics</h2>
+<p>Reorder the sample ascending: $X_{(1)}\le X_{(2)}\le\dots\le X_{(n)}$. These are the raw material of the median, range, quantile estimates, extremes (max load, worst-case latency), and much of nonparametrics.</p>
+
+<div class="box thm">
+<span class="label">Theorem (density of a single order statistic).</span>
+For iid continuous $X_i$ with cdf $F$, density $f$, the $j$-th order statistic has density
+$$f_{X_{(j)}}(x) = \frac{n!}{(j-1)!\,(n-j)!}\,F(x)^{\,j-1}\big(1-F(x)\big)^{\,n-j} f(x).$$
+<p class="proof-label">Proof (multinomial heuristic made rigorous).</p>
+The event $\{X_{(j)}\in(x,x+dx]\}$ requires, up to $o(dx)$, exactly one observation in $(x,x+dx]$, exactly $j-1$ below $x$, and $n-j$ above. By independence and the multinomial coefficient for assigning which observations land where,
+$$P(X_{(j)}\in(x,x+dx]) = \frac{n!}{(j-1)!\,1!\,(n-j)!} F(x)^{j-1}\big(1-F(x)\big)^{n-j} f(x)\,dx + o(dx).$$
+Dividing by $dx$ and letting $dx\downarrow 0$ gives the density. (A fully rigorous route differentiates the exact cdf $F_{X_{(j)}}(x)=\sum_{k=j}^n \binom nk F(x)^k(1-F(x))^{n-k}$; the sum telescopes to the stated density.) <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">The Uniform case is the Rosetta Stone.</span>
+If $U_i$ iid $\mathrm{Uniform}(0,1)$, then $U_{(j)}\sim \mathrm{Beta}(j,\,n-j+1)$ &mdash; read off the density above with $F(u)=u$. Extremes: $U_{(n)}\sim\mathrm{Beta}(n,1)$ (max), $U_{(1)}\sim\mathrm{Beta}(1,n)$ (min). And via the <strong>probability integral transform</strong> $U_i=F(X_i)$, every continuous case reduces to the uniform one &mdash; so Beta order statistics underlie everything.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$X_{(3)}$ out of $n=10$ iid $\mathrm{Uniform}(0,1)$, $300{,}000$ reps (theory $\mathrm{Beta}(3,8)$):</p>
+<pre>empirical mean = 0.2724   theory a/(a+b)              = 0.2727
+empirical var  = 0.01654  theory ab/((a+b)^2(a+b+1))  = 0.01653
+
+ bin mid | empirical density | Beta(3,8) pdf
+  0.17   |     2.8493        |    2.8678
+  0.23   |     3.0311        |    3.0604
+  0.28   |     2.8595        |    2.8664</pre>
+<p>Extremes: max mean $0.9089$ vs $n/(n+1)=0.9091$; min mean $0.0911$ vs $1/(n+1)=0.0909$.</p>
+</div>
+
+<!-- ============================= 5.5 ============================= -->
+<h2>&sect;5.5 Convergence Concepts</h2>
+<p>This section is where measure-theoretic probability earns its keep. Four modes, a strict hierarchy, and the delta method &mdash; the asymptotic toolkit all of Chapter 10 runs on.</p>
+
+<h3>&sect;5.5.1 Convergence in Probability</h3>
+<div class="box def">
+$X_n\xrightarrow{P}X$ if for every $\varepsilon>0$, $P(|X_n-X|>\varepsilon)\to 0$. A statement about the <em>measure of a bad set</em> shrinking, for each tolerance separately.
+</div>
+<div class="box thm">
+<span class="label">Weak Law of Large Numbers (WLLN).</span>
+If $X_i$ iid with $E[X_1]=\mu$ and $\mathrm{Var}(X_1)=\sigma^2<\infty$, then $\bar X_n\xrightarrow{P}\mu$.
+<p class="proof-label">Proof.</p>
+$E[\bar X_n]=\mu$, $\mathrm{Var}(\bar X_n)=\sigma^2/n$. Chebyshev: $P(|\bar X_n-\mu|>\varepsilon)\le \frac{\sigma^2/n}{\varepsilon^2}\to 0.$ <span class="qed">&#8718;</span>
+<br>(The finite-variance assumption is removable &mdash; the WLLN holds under just $E|X_1|<\infty$ &mdash; but Chebyshev is the honest one-liner.)
+</div>
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$X_i$ iid $\mathrm{Exp}(1)$, $\mu=1$. Empirical $P(|\bar X_n-1|>0.1)$:</p>
+<pre> n=   10:  0.7507
+ n=   50:  0.4795
+ n=  200:  0.1578
+ n= 1000:  0.0019
+ n= 5000:  0.0000</pre>
+<p>The bad-set probability marches to $0$, exactly as $\sigma^2/(n\varepsilon^2)=1/(0.01 n)$ predicts as an upper bound.</p>
+</div>
+
+<h3>&sect;5.5.2 Almost Sure Convergence</h3>
+<div class="box def">
+$X_n\xrightarrow{a.s.}X$ if $P(\{\omega: X_n(\omega)\to X(\omega)\})=1$ &mdash; convergence of the <em>sample paths</em> for almost every $\omega$. Strictly stronger than $\xrightarrow{P}$: a.s. $\Rightarrow$ in probability, not conversely.
+</div>
+<div class="box thm">
+<span class="label">Strong Law (SLLN), stated.</span>
+If $X_i$ iid with $E|X_1|<\infty$, then $\bar X_n\xrightarrow{a.s.}\mu$. (Proof deferred &mdash; it needs Kolmogorov's maximal inequality or a truncation argument; not a one-liner.)
+</div>
+<div class="box remark">
+<span class="label">Why the distinction is not pedantic.</span>
+"In probability" says that at any <em>fixed large</em> $n$, you are probably close. "Almost surely" says that if you watch a single run forever, it <em>settles</em>. A long-running estimator, an online learning algorithm, or a Monte Carlo average you keep refining &mdash; those are a.s. statements: you care about the one trajectory you are on, not a snapshot.
+</div>
+<div class="simbox">
+<div class="label">Simulation check &mdash; the typewriter sequence (in probability but NOT a.s.)</div>
+<p>On $([0,1],\text{Lebesgue})$, index by sweeps: $n=\tfrac{m(m-1)}2+k$, $A_{m,k}=[\tfrac{k-1}{m},\tfrac km)$, $X_n=\mathbf 1_{A_{m,k}}$. Then $P(A_n)=1/m\to 0$ so $X_n\xrightarrow{P}0$; but every fixed $\omega$ is hit once per sweep, so $X_n(\omega)=1$ infinitely often &mdash; no pointwise convergence. Tracking $\omega=0.37$:</p>
+<pre>sweep m= 1:  n=  1   X_n=1   P(A_n)=1.0000
+sweep m= 3:  n=  5   X_n=1   P(A_n)=0.3333
+sweep m= 5:  n= 12   X_n=1   P(A_n)=0.2000
+sweep m= 7:  n= 24   X_n=1   P(A_n)=0.1429</pre>
+<p>$X_n(0.37)$ keeps spiking to $1$ forever even as $P(A_n)\to 0$. This is the canonical separation of the two modes.</p>
+</div>
+
+<h3>&sect;5.5.3 Convergence in Distribution</h3>
+<div class="box def">
+$X_n\xrightarrow{d}X$ if $F_{X_n}(x)\to F_X(x)$ at every continuity point $x$ of $F_X$. The weakest mode &mdash; only the <em>laws</em> converge, the variables need not live on a common space. (a.s. $\Rightarrow$ $P$ $\Rightarrow$ $d$; none of the arrows reverse in general.)
+</div>
+<div class="box thm">
+<span class="label">Central Limit Theorem.</span>
+If $X_i$ iid, $E[X_1]=\mu$, $0<\mathrm{Var}(X_1)=\sigma^2<\infty$, then $\dfrac{\sqrt n(\bar X_n-\mu)}{\sigma}\xrightarrow{d}N(0,1)$.
+<p class="proof-label">Proof sketch (characteristic functions).</p>
+Let $Y_i=(X_i-\mu)/\sigma$, $\varphi(t)=E[e^{itY_1}]=1-\tfrac{t^2}2+o(t^2)$. The standardized sum has characteristic function $\varphi(t/\sqrt n)^n=\big(1-\tfrac{t^2}{2n}+o(1/n)\big)^n\to e^{-t^2/2}$, the $N(0,1)$ characteristic function. L&eacute;vy's continuity theorem converts pointwise convergence of characteristic functions into $\xrightarrow{d}$. <span class="qed">&#8718;</span>
+</div>
+<div class="simbox">
+<div class="label">Simulation check &mdash; CLT kicking in</div>
+<p>Standardized $\bar X_n$ from iid $\mathrm{Exp}(1)$ (a skewed start). Tail probabilities vs $N(0,1)$ (target $\Phi(-1)=0.1587$ both sides):</p>
+<pre>n=  2:  P(Z<-1)=0.1176   P(Z>1)=0.1452   (visibly skewed)
+n= 10:  P(Z<-1)=0.1539   P(Z>1)=0.1542
+n= 50:  P(Z<-1)=0.1582   P(Z>1)=0.1580
+n=200:  P(Z<-1)=0.1573   P(Z>1)=0.1581</pre>
+<p>The left/right asymmetry at $n=2$ (the exponential's skew) is symmetrized away by $n=50$ &mdash; the CLT visibly repairing a skewed summand.</p>
+</div>
+
+<h3>&sect;5.5.4 The Delta Method</h3>
+<div class="box thm">
+<span class="label">Delta method.</span>
+If $\sqrt n(T_n-\theta)\xrightarrow{d}N(0,\sigma^2)$ and $g$ is differentiable at $\theta$ with $g'(\theta)\ne 0$, then
+$$\sqrt n\big(g(T_n)-g(\theta)\big)\xrightarrow{d}N\!\big(0,\;\sigma^2\,[g'(\theta)]^2\big).$$
+<p class="proof-label">Proof.</p>
+Taylor: $g(T_n)=g(\theta)+g'(\theta)(T_n-\theta)+R_n$ with $R_n=o(|T_n-\theta|)$. Since $T_n\xrightarrow{P}\theta$ (consistency from the $\sqrt n$-rate), $\sqrt n R_n\xrightarrow{P}0$. Thus $\sqrt n(g(T_n)-g(\theta))=g'(\theta)\sqrt n(T_n-\theta)+o_P(1)$, and Slutsky gives the limit $N(0,\sigma^2[g'(\theta)]^2)$. <span class="qed">&#8718;</span>
+</div>
+<div class="box remark">
+<span class="label">Why you use this constantly.</span>
+It is how you get a standard error for <em>any smooth transform</em> of an asymptotically normal estimate &mdash; log-odds, ratios, $R^2$, a rate computed from a count &mdash; without re-deriving a sampling distribution. It is the mechanical engine behind "SE of a transformed parameter" in every stats package.
+</div>
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$X_i$ iid $\mathrm{Bernoulli}(0.3)$, $g=\mathrm{logit}$, $g'(p)=\frac1{p(1-p)}=4.762$. Theory: $\sqrt n(\mathrm{logit}\,\bar X-\mathrm{logit}\,p)\to N(0,\sigma^2)$, $\sigma^2=p(1-p)g'(p)^2=\frac1{p(1-p)}=4.762$.</p>
+<pre> n=   50: empirical var = 5.1500   theory = 4.7619
+ n=  500: empirical var = 4.7890   theory = 4.7619
+ n= 5000: empirical var = 4.7595   theory = 4.7619</pre>
+<p>Convergence to the delta-method variance is clear; the $n=50$ overshoot is the finite-sample curvature the first-order expansion ignores.</p>
+</div>
+
+<!-- ============================= 5.6 ============================= -->
+<h2>&sect;5.6 Generating a Random Sample</h2>
+<p>Every simulation above rests on turning uniform random numbers into draws from a target law. Two families: direct (exploit structure) and indirect (accept/reject).</p>
+
+<h3>&sect;5.6.1 Direct Methods &mdash; the Probability Integral Transform</h3>
+<div class="box thm">
+<span class="label">Inverse-CDF (Smirnov) transform.</span>
+If $U\sim\mathrm{Uniform}(0,1)$ and $F$ is a cdf with generalized inverse $F^{-1}(u)=\inf\{x:F(x)\ge u\}$, then $X=F^{-1}(U)$ has cdf $F$.
+<p class="proof-label">Proof.</p>
+For continuous strictly increasing $F$: $P(F^{-1}(U)\le x)=P(U\le F(x))=F(x)$, the middle step by monotonicity of $F$. The generalized inverse handles jumps/flats so the identity $\{F^{-1}(u)\le x\}=\{u\le F(x)\}$ holds in general. <span class="qed">&#8718;</span>
+</div>
+<div class="box remark">
+Practical reach: exponential ($X=-\ln(1-U)/\lambda$), and any distribution with a closed-form quantile. Normal has no elementary $F^{-1}$ &mdash; hence Box&ndash;Muller (a direct method exploiting the 2-D rotational structure of &sect;5.3) or accept/reject.
+</div>
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$\mathrm{Exp}(\text{rate}=2)$ via $X=-\ln(1-U)/2$, $300{,}000$ draws:</p>
+<pre>empirical mean = 0.5003   theory 1/lam   = 0.5000
+empirical var  = 0.2499   theory 1/lam^2 = 0.2500</pre>
+</div>
+
+<h3>&sect;5.6.3 The Accept/Reject Algorithm</h3>
+<div class="box thm">
+<span class="label">Accept/Reject.</span>
+To sample target density $f$ using proposal density $g$ (easy to sample) with $M=\sup_x f(x)/g(x)<\infty$: draw $Y\sim g$, $U\sim\mathrm{Uniform}(0,1)$ independent; accept $X=Y$ if $U\le \frac{f(Y)}{M\,g(Y)}$, else repeat.
+<p class="proof-label">Proof of correctness.</p>
+$P(\text{accept}\mid Y=y)=\frac{f(y)}{Mg(y)}$, so for any Borel $B$,
+$$P(Y\in B,\text{accept})=\int_B \frac{f(y)}{Mg(y)}g(y)\,dy=\frac1M\int_B f(y)\,dy.$$
+Taking $B=\mathbb{R}$: $P(\text{accept})=1/M$. Hence $P(X\in B)=P(Y\in B\mid\text{accept})=\int_B f=\;$ target. Each trial accepts independently w.p. $1/M$, so the number of trials is $\mathrm{Geometric}(1/M)$ with mean $M$. <span class="qed">&#8718;</span>
+</div>
+<div class="box remark">
+<span class="label">The intuition and the cost.</span>
+Throw darts under the scaled proposal $M g$; keep those landing under $f$. $M$ is the "wasted area" factor &mdash; the mean number of proposals per accepted draw. Choose $g$ hugging $f$ to keep $M$ near $1$. This is the conceptual ancestor of MCMC: when $M$ is uncontrollable (high dimensions), you give up independence and build a Markov chain with $f$ as its stationary law instead.
+</div>
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>Target $\mathrm{Beta}(2,3)$, proposal $\mathrm{Uniform}(0,1)$, $M=\sup f=f(1/3)=1.7778$. Collected $400{,}000$ accepted draws:</p>
+<pre>proposed 710,717 candidates for 400,000 accepts
+empirical acceptance = 0.5628   theory 1/M = 0.5625
+empirical mean       = 0.3998   theory a/(a+b) = 0.4000
+
+ bin mid | empirical density | Beta(2,3) pdf
+  0.32   |     1.7652        |    1.7769
+  0.38   |     1.7476        |    1.7578
+  0.47   |     1.5668        |    1.5711</pre>
+<p>Acceptance rate matches $1/M$ to three decimals, and the kept draws reproduce the Beta density across its support.</p>
+</div>
+
+<!-- ============================= wrap ============================= -->
+<h2>Where this leaves you</h2>
+<p>Chapter 5 is the engine room. You now have: the iid/statistic/sampling-distribution frame (5.1), MGF reproductive properties (5.2), the full normal sampling theory legitimizing $t$ and $F$ (5.3), order-statistic densities via the Beta/uniform Rosetta Stone (5.4), the convergence hierarchy a.s. $\Rightarrow$ $P$ $\Rightarrow$ $d$ with the CLT and delta method (5.5), and the simulation machinery &mdash; inverse-CDF and accept/reject &mdash; that produced every number above (5.6). Chapters 6&ndash;10 are built directly on this: sufficiency and completeness (foreshadowed by Basu/Luk&aacute;cs), estimation and its asymptotics (WLLN, CLT, delta method), and the testing/interval theory that leans on the normal sampling results.</p>
+
+<div class="pagenav">
+  <a href="../index.html">&larr; Home</a>
+  <a href="../ch06/index.html">6. Principles of Data Reduction &rarr;</a>
+</div>
+</main>
+</body>
+</html>

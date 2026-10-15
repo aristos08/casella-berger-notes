@@ -1,0 +1,125 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,booktabs,enumitem,hyperref,xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{fact}[theorem]{Fact}
+\newtheorem{claim}[theorem]{Claim}
+\newtcolorbox{simbox}{colback=blue!4!white,colframe=blue!40!black,boxrule=0.4pt,arc=1pt,title=Simulation Check}
+
+\DeclareMathOperator{\Var}{Var}\DeclareMathOperator{\Cov}{Cov}\DeclareMathOperator{\E}{E}
+\newcommand{\dto}{\overset{d}{=}}\newcommand{\R}{\mathbb{R}}
+\newcommand{\convP}{\xrightarrow{P}}\newcommand{\convD}{\xrightarrow{d}}\newcommand{\convAS}{\xrightarrow{a.s.}}
+
+\title{Casella \& Berger, Chapter 5\\[2pt]\large Properties of a Random Sample}
+\author{Course notes}\date{}
+
+\begin{document}
+\maketitle
+
+\section{\S5.1 Basic Concepts of Random Samples}
+\begin{definition}[Random sample]
+$X_1,\dots,X_n$ is a random sample from $P_X$ on $(\R,\mathcal B)$ if the $X_i$ are mutually independent, each $\sim P_X$; the joint law is the product measure $P_X^{\otimes n}$, with density $\prod_i f(x_i)$. This factorization is the entire content of ``iid'' and is what makes likelihoods multiply.
+\end{definition}
+\begin{definition}[Statistic]
+$T=T(X_1,\dots,X_n)$, Borel-measurable, parameter-free. Its law $P_X^{\otimes n}\circ T^{-1}$ is the \emph{sampling distribution}.
+\end{definition}
+\begin{remark}[Why it matters]
+Independence $\Rightarrow$ density factorizes $\Rightarrow$ MGFs multiply $\Rightarrow$ tractable sampling distributions. What breaks when iid fails: time series (autocorrelation $\to$ SEs too small), clustered experiments (inflated variance), ML distribution shift, de Finetti/exchangeability. Treating non-iid data as iid is the most common applied error.
+\end{remark}
+
+\section{\S5.2 Sums of Random Variables}
+Convolution $f_{X+Y}=f_X*f_Y$ (differentiate $F_Z(z)=\int F_X(z-y)f_Y(y)\,dy$ under the integral by DCT). Workhorse:
+\begin{fact}
+Independent $X_i\Rightarrow M_{\sum X_i}(t)=\prod_i M_{X_i}(t)$, since $\E[\prod e^{tX_i}]=\prod\E[e^{tX_i}]$ (independence factorization).
+\end{fact}
+With MGF uniqueness this gives reproductive properties: iid Bernoulli$(p)\to$Bin$(n,p)$; Poisson$(\lambda)\to$Poisson$(n\lambda)$; Gamma$(\alpha,\beta)\to$Gamma$(n\alpha,\beta)$; $N(\mu,\sigma^2)\to N(n\mu,n\sigma^2)$.
+
+\begin{simbox}
+Sum of 5 iid Exp(1), 200k reps: mean $4.9968$ (th.\ 5), var $4.9736$ (th.\ 5); density matches Gamma(5,1) to 3 dp. Sum of 20 iid Bernoulli(0.3) matches Binomial(20,0.3) pmf.
+\end{simbox}
+
+\section{\S5.3 Sampling from the Normal Distribution}
+\subsection{\S5.3.1 Properties of $\bar X$ and $S^2$}
+$X_i$ iid $N(\mu,\sigma^2)$.
+\begin{theorem}\label{thm:ns}
+(a) $\bar X\sim N(\mu,\sigma^2/n)$; (b) $\bar X\perp S^2$; (c) $(n-1)S^2/\sigma^2\sim\chi^2_{n-1}$.
+\end{theorem}
+\begin{proof}[Proof of (b),(c)]
+$Z_i=(X_i-\mu)/\sigma$ iid $N(0,1)$ with density depending only on $\|z\|^2$ (rotational invariance). Pick orthogonal $A$, first row $(1/\sqrt n,\dots,1/\sqrt n)$; $Y=AZ$. Change of variables $z=A'y$, Jacobian $1$, $\|z\|^2=\|y\|^2$, so $Y$ is iid $N(0,1)$ too. Then $Y_1=\sqrt n\,\bar Z$ and
+\[\sum_{i\ge 2}Y_i^2=\sum_i Z_i^2-n\bar Z^2=\sum_i(Z_i-\bar Z)^2=(n-1)S^2/\sigma^2.\]
+RHS $\sim\chi^2_{n-1}$ (sum of $n-1$ squared iid $N(0,1)$) $\Rightarrow$ (c). $Y_1\perp(Y_2,\dots,Y_n)$ (disjoint blocks of independent coords), $\bar X$ affine in $Y_1\Rightarrow$ (b).
+\end{proof}
+\begin{remark}
+Luk\'acs (1942): $\bar X\perp S^2$ for iid finite-variance $X_i$ \emph{iff} normal. Previews Basu's theorem (Ch.\ 6). Simulation: normal gives $\mathrm{corr}(\bar X,S^2)=-0.0009$; Exp(1) gives $0.6992$.
+\end{remark}
+
+\subsection{\S5.3.2 Student's $t$ and Snedecor's $F$}
+$T_p=Z/\sqrt{W/p}$ ($Z\sim N(0,1)\perp W\sim\chi^2_p$); $F_{p,q}=(U/p)/(V/q)$. For iid normals, $\sigma$ cancels:
+$T=(\bar X-\mu)/(S/\sqrt n)\sim t_{n-1}$ (ratio of the two independent pieces of Thm \ref{thm:ns}).
+\begin{claim}
+$f_T(t)=\dfrac{\Gamma(\frac{p+1}{2})}{\Gamma(p/2)\sqrt{p\pi}}(1+t^2/p)^{-(p+1)/2}$ (transform $z=t\sqrt{w/p}$, integrate out $w$ via a Gamma integral). $\Var(T_p)=\frac{p}{p-2}$, $\E[F_{p,q}]=\frac{q}{q-2}$. Heavy tails $=$ price of unknown $\sigma$.
+\end{claim}
+\begin{simbox}
+$n=10$: $\Var(T)=1.2904$ (th.\ $9/7=1.2857$), 97.5 pct $2.272$ (table $2.262$). $T^2\dto F_{1,9}$ confirmed.
+\end{simbox}
+
+\section{\S5.4 Order Statistics}
+$X_{(1)}\le\dots\le X_{(n)}$.
+\begin{theorem}
+$f_{X_{(j)}}(x)=\dfrac{n!}{(j-1)!(n-j)!}F(x)^{j-1}(1-F(x))^{n-j}f(x)$.
+\end{theorem}
+\begin{proof}
+Multinomial: one obs in $(x,x+dx]$, $j-1$ below, $n-j$ above, $+o(dx)$; divide by $dx$. (Rigorous version: differentiate $F_{X_{(j)}}(x)=\sum_{k\ge j}\binom nk F^k(1-F)^{n-k}$.)
+\end{proof}
+\begin{remark}
+Uniform case: $U_{(j)}\sim\mathrm{Beta}(j,n-j+1)$; max $\sim$Beta$(n,1)$, min $\sim$Beta$(1,n)$. Probability integral transform reduces every continuous case to the uniform.
+\end{remark}
+\begin{simbox}
+$U_{(3)}$ of 10, 300k reps: mean $0.2724$ (th.\ $3/11=0.2727$), var $0.01654$ (th.\ $0.01653$); density matches Beta(3,8).
+\end{simbox}
+
+\section{\S5.5 Convergence Concepts}
+\begin{definition}
+$X_n\convP X$: $\forall\varepsilon,\ P(|X_n-X|>\varepsilon)\to 0$. $X_n\convAS X$: $P(X_n\to X)=1$. $X_n\convD X$: $F_{X_n}\to F_X$ at continuity points. Hierarchy: a.s.\ $\Rightarrow$ $P$ $\Rightarrow$ $d$, no reversals.
+\end{definition}
+\begin{theorem}[WLLN]
+iid, finite variance $\Rightarrow\bar X_n\convP\mu$. Proof: Chebyshev, $P(|\bar X_n-\mu|>\varepsilon)\le\sigma^2/(n\varepsilon^2)\to 0$.
+\end{theorem}
+\textbf{SLLN} (stated): iid, $\E|X_1|<\infty\Rightarrow\bar X_n\convAS\mu$.
+\begin{remark}
+``In probability'' $=$ probably close at fixed large $n$; ``a.s.''\ $=$ the single trajectory settles. Online learning / long-run Monte Carlo are a.s.\ statements. Counterexample (typewriter): $X_n=\mathbf 1_{A_{m,k}}$ with $A_{m,k}=[\frac{k-1}m,\frac km)$ has $X_n\convP 0$ but $X_n(\omega)=1$ i.o., so not a.s.
+\end{remark}
+\begin{theorem}[CLT]
+iid, $0<\sigma^2<\infty\Rightarrow\sqrt n(\bar X_n-\mu)/\sigma\convD N(0,1)$. Proof: char.\ fn.\ $\varphi(t/\sqrt n)^n=(1-\frac{t^2}{2n}+o(1/n))^n\to e^{-t^2/2}$, L\'evy continuity.
+\end{theorem}
+\begin{theorem}[Delta method]
+$\sqrt n(T_n-\theta)\convD N(0,\sigma^2)$, $g'(\theta)\ne 0\Rightarrow\sqrt n(g(T_n)-g(\theta))\convD N(0,\sigma^2 g'(\theta)^2)$. Proof: Taylor $+$ Slutsky, remainder $o_P(1)$.
+\end{theorem}
+\begin{simbox}
+WLLN (Exp(1), $\varepsilon=0.1$): $P(|\bar X_n-1|>\varepsilon)=0.75,0.48,0.16,0.002,0.00$ for $n=10,50,200,1000,5000$. CLT (standardized Exp(1)): tail asymmetry at $n=2$ ($0.118$ vs $0.145$) symmetrizes to $\approx 0.158=\Phi(-1)$ by $n=50$. Delta (logit of Bernoulli(0.3), th.\ var $4.762$): empirical $5.15,4.79,4.76$ for $n=50,500,5000$.
+\end{simbox}
+
+\section{\S5.6 Generating a Random Sample}
+\begin{theorem}[Inverse-CDF]
+$U\sim\mathrm{Unif}(0,1)$, $F^{-1}(u)=\inf\{x:F(x)\ge u\}\Rightarrow X=F^{-1}(U)\sim F$. Proof: $P(F^{-1}(U)\le x)=P(U\le F(x))=F(x)$.
+\end{theorem}
+E.g.\ Exp: $X=-\ln(1-U)/\lambda$. Normal has no elementary $F^{-1}$ (use Box--Muller / accept-reject).
+\begin{theorem}[Accept/Reject]
+Target $f$, proposal $g$, $M=\sup f/g<\infty$. Draw $Y\sim g,\ U\sim\mathrm{Unif}(0,1)$; accept if $U\le f(Y)/(Mg(Y))$. Then $X\sim f$, $P(\text{accept})=1/M$, trials $\sim$Geom$(1/M)$.
+\end{theorem}
+\begin{proof}
+$P(Y\in B,\text{acc})=\int_B\frac{f}{Mg}g=\frac1M\int_B f$; $B=\R\Rightarrow P(\text{acc})=1/M$; condition.
+\end{proof}
+\begin{remark}
+Darts under $Mg$, keep those under $f$; $M=$ mean proposals per accept. Ancestor of MCMC (when $M$ uncontrollable, drop independence, build a chain with stationary law $f$).
+\end{remark}
+\begin{simbox}
+Exp(2) via inverse-CDF: mean $0.5003$, var $0.2499$ (th.\ $0.5,0.25$). Accept/reject Beta(2,3) from Uniform, $M=1.7778$: acceptance $0.5628$ (th.\ $1/M=0.5625$), kept draws match Beta(2,3).
+\end{simbox}
+
+\end{document}
