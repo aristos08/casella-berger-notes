@@ -1,0 +1,112 @@
+
+========================================================================
+7.2.1 METHOD OF MOMENTS: Gamma(alpha=3, beta=2), closed form but unstable for small n
+========================================================================
+  n=  10 (R=60000): alpha_hat mean= 4.4167 median=3.7949 q05=1.7616 q95= 9.0586   (true 3)
+              beta_hat  mean= 1.7512   (true 2)
+  n=  50 (R=20000): alpha_hat mean= 3.2508 median=3.1680 q05=2.1724 q95= 4.6041   (true 3)
+              beta_hat  mean= 1.9445   (true 2)
+  n= 500 (R=3000): alpha_hat mean= 3.0274 median=3.0265 q05=2.6603 q95= 3.4108   (true 3)
+              beta_hat  mean= 1.9932   (true 2)
+
+========================================================================
+7.2.1 MoM CAN CONTRADICT THE DATA: Uniform(0,theta), theta=1, n=10
+========================================================================
+  P(2*Xbar < X_(n)) = 0.2868   <- MoM estimate below an observed value
+  MSE  MoM 2*Xbar        = 0.03314   theory 1/(3n)        = 0.03333
+  MSE  MLE X_(n)         = 0.01516   theory 2/((n+1)(n+2))= 0.01515
+  MSE  UMVUE (n+1)/n*max = 0.00833   theory 1/(n(n+2))    = 0.00833
+
+========================================================================
+7.2.2 MLE: normal variance. Biased, yet smaller MSE than the unbiased S^2
+========================================================================
+  S^2 (divisor n-1): E=3.9994 (4)      MSE=3.5441  theory 3.5556
+  MLE (divisor n)  : E=3.5995 (3.6)    MSE=3.0311  theory 3.0400
+  divisor n+1      : E=3.2723 (3.2727) MSE=2.9021  theory 2.9091
+  invariance: MLE of sigma = sqrt(MLE of sigma^2): E=1.8455  theory 1.8455  (sigma=2, so biased low)
+
+========================================================================
+7.2.2 MLE IS NOT ALWAYS A SOLVED EQUATION: Cauchy location, multiple local maxima
+========================================================================
+  n=  5: fraction of samples whose log-likelihood has >1 local max = 0.2960
+  n= 15: fraction of samples whose log-likelihood has >1 local max = 0.0413
+
+========================================================================
+7.2.3 BAYES: Beta(5,5) prior, Binomial n=20. Shrinkage trades bias for variance
+========================================================================
+  posterior mean = (5+sum x)/30 = 0.3333*0.5 + 0.6667*Xbar   (shrink weight w=0.3333)
+  p=0.1: MSE Bayes=0.01985 (theory 0.01978)   MSE MLE=0.00458 (theory 0.00450)
+  p=0.3: MSE Bayes=0.00910 (theory 0.00911)   MSE MLE=0.01049 (theory 0.01050)
+  p=0.5: MSE Bayes=0.00559 (theory 0.00556)   MSE MLE=0.01258 (theory 0.01250)
+  p=0.9: MSE Bayes=0.01969 (theory 0.01978)   MSE MLE=0.00447 (theory 0.00450)
+  integrated risk over the prior: Bayes=0.00759 (theory 0.00758)   MLE=0.01131 (theory 0.01136)
+
+========================================================================
+7.2.4 EM: two-component normal mixture (sigma=1 known). Monotone log-likelihood
+========================================================================
+  true (w,mu1,mu2) = (0.35, 0.0, 3.0),  n=400
+  EM from (0.5,-1,1): converged in 39 iterations to w=0.3618 mu1=-0.0425 mu2=3.0081
+  log-likelihood at iterations 0,1,2,3,5,10,last: -995.852, -840.909, -816.396, -798.465, -780.648, -775.194, -775.119
+  number of iterations where the log-likelihood DECREASED: 0  (theorem says 0)
+  40 random inits: best final loglik=-775.119, worst=-775.119, reached the best value 40/40 times
+  -> in THIS well-separated problem every start found the same optimum; no local-max trap here.
+
+========================================================================
+7.2.4 WITH FREE VARIANCES THE LIKELIHOOD IS UNBOUNDED: no MLE exists
+========================================================================
+  component 1 pinned at the single observation x1=2.4544; component 2 held at (mu=1.061, var=1.0)
+     v1        |  log-likelihood  |  predicted: const - 0.5*log(v1)
+   1e-8         |     -1271.637    |     -1271.637
+   1e-16        |     -1262.426    |     -1262.426
+   1e-30        |     -1246.308    |     -1246.308
+   1e-60        |     -1211.770    |     -1211.770
+   1e-120       |     -1142.692    |     -1142.692
+   1e-240       |     -1004.537    |     -1004.537
+  -> the log-likelihood grows like -0.5*log(v1) without bound: the supremum is +infinity,
+     and the simulated values track the predicted slope exactly.
+     The unrestricted normal-mixture MLE does not exist; in practice one bounds the
+     variances away from 0, penalizes them, or puts a prior on them.
+
+========================================================================
+7.3.1 MSE: bias-variance decomposition, and unbiasedness can be worthless
+========================================================================
+  (divisor comparison above already shows MSE(n+1) < MSE(MLE) < MSE(S^2) for normal data)
+  check decomposition for the MLE of sigma^2: MSE=3.0311  var+bias^2=3.0311
+  Poisson(1), estimator (-1)^X for exp(-2*lambda)=0.1353:
+     E[(-1)^X] = +0.1308  (unbiased)   but it only ever takes the values -1 and +1
+     Var = 0.9829  theory 1-exp(-4*lambda) = 0.9817
+
+========================================================================
+7.3.2 CRAMER-RAO: attained for exponential-family means, not attained in general
+========================================================================
+  Bernoulli(0.3), estimate p   : Var(Xbar)=0.01048  theory 0.01050  CRLB 0.01050  -> ratio 1.000
+  Poisson(2), estimate lambda  : Var(Xbar)=0.10046  theory 0.10000  CRLB 0.10000  -> ratio 1.000
+  Normal(0,4), estimate mu     : Var(Xbar)=0.19939  theory 0.20000  CRLB 0.20000  -> ratio 1.000
+
+========================================================================
+7.3.2 A UMVUE that does NOT attain the bound: Poisson, estimate tau=exp(-lambda)
+========================================================================
+  tau = exp(-1) = 0.36788
+  crude  1{X1=0} : E=0.36845  Var=0.23269  theory 0.23254
+  UMVUE  ((n-1)/n)^T: E=0.36763  Var=0.01425  theory 0.01423
+  CRLB for tau = lambda*exp(-2*lambda)/n = 0.01353   <- strictly below the UMVUE variance
+
+========================================================================
+7.3.3 RAO-BLACKWELL: conditioning on a sufficient statistic cuts variance
+========================================================================
+  Bernoulli(0.5), n=10, estimate p^2 = 0.25
+  crude X1*X2              : E=0.2503  Var=0.18767  theory 0.18750
+  Rao-Blackwell T(T-1)/(n(n-1)): E=0.2504  Var=0.02642  theory 0.02639
+  variance ratio = 7.11x reduction
+  (the Poisson example above is the same mechanism: 1{X1=0} -> ((n-1)/n)^T, 16.3x reduction)
+
+========================================================================
+7.3.4 LOSS FUNCTIONS: posterior mean / median / mode for squared / absolute / 0-1 loss
+========================================================================
+  posterior Gamma(shape=5, rate=6): mean=0.83333  median=0.77848  mode=0.66667
+  candidate = posterior mean  : E[(theta-a)^2]=0.13889 (exact)   E|theta-a|=0.29268
+  candidate = posterior median: E[(theta-a)^2]=0.14190 (exact)   E|theta-a|=0.28921
+  candidate = posterior mode  : E[(theta-a)^2]=0.16667 (exact)   E|theta-a|=0.30293
+  grid scan over a in [0.60,0.90] step 0.005:
+     argmin of E[(theta-a)^2] = 0.835   (posterior mean   = 0.8333)
+     argmin of E|theta-a|     = 0.775   (posterior median = 0.7785)

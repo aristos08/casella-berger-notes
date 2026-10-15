@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ch.7 Point Estimation &mdash; C&amp;B Course Notes</title>
 <link rel="stylesheet" href="../assets/style.css">
-<script>MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']],tags:'none'}};</script>
+<script>
+MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']], tags: 'none' } };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
@@ -13,7 +15,7 @@
   <a class="brand" href="../index.html">C&amp;B</a>
   <a class="chip done" href="../ch05/index.html">5</a>
   <a class="chip done" href="../ch06/index.html">6</a>
-  <a class="chip current" href="../ch07/index.html">7</a>
+  <a class="chip current done" href="../ch07/index.html">7</a>
   <a class="chip" href="../ch08/index.html">8</a>
   <a class="chip" href="../ch09/index.html">9</a>
   <a class="chip" href="../ch10/index.html">10</a>
@@ -22,22 +24,484 @@
 </nav>
 <main>
 <h1>Chapter 7 &mdash; Point Estimation
-<span class="subtitle">Finding estimators (MoM, MLE, Bayes, EM) and evaluating them (MSE, UMVUE, Cram&eacute;r&ndash;Rao, loss)</span>
+<span class="subtitle">Four ways to find an estimator, and four ways to judge one</span>
 </h1>
 
-<div class="todo-banner"><strong>Not yet written.</strong> Scaffolded with full section structure. Prompt &ldquo;do chapter 7&rdquo; (or specific sections) to fill in proofs, intuition, and seeded simulations at the Chapter 5 standard.</div>
+<p class="lead">Chapter 6 asked which statistics are worth computing. Chapter 7 commits: we pick a single number as our guess for $\theta$. The chapter has two halves that must be kept apart in your head &mdash; <strong>recipes for constructing estimators</strong> (&sect;7.2), which come with no guarantees whatsoever, and <strong>criteria for judging them</strong> (&sect;7.3). Confusing the two is how people end up defending an estimator because of how it was derived rather than how it performs.</p>
 
+<!-- ============================= 7.1 ============================= -->
 <h2>&sect;7.1 Introduction</h2>
+
+<div class="box def">
+<span class="label">Definition.</span>
+A <em>point estimator</em> is any statistic $W=W(X_1,\dots,X_n)$ &mdash; a measurable, parameter-free function of the sample. A point <em>estimate</em> is the realized number $W(x)$. Note that nothing in the definition mentions $\theta$: an estimator is just a statistic, and $\sin(X_1)$ is a legitimate (terrible) estimator of a population mean.
+</div>
+
+<div class="box remark">
+<span class="label">Why the definition is deliberately empty.</span>
+Because the quality of an estimator is <em>not</em> a property of its derivation. Any construction &mdash; moments, likelihood, a prior, a neural network &mdash; produces some statistic; whether that statistic is any good is a separate question answered by risk, variance, and bias. Keeping these separate is the entire architecture of the chapter, and it is also the honest answer to "why is maximum likelihood right?" It is not right by fiat; it earns its place through the evaluations in &sect;7.3 and the asymptotics of Chapter 10.
+</div>
+
+<!-- ============================= 7.2 ============================= -->
 <h2>&sect;7.2 Methods of Finding Estimators</h2>
+
 <h3>&sect;7.2.1 Method of Moments</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+Let $\theta=(\theta_1,\dots,\theta_k)$. Define sample and population moments
+$$m_j=\frac1n\sum_{i=1}^nX_i^{\,j},\qquad \mu_j(\theta)=E_\theta\big[X^j\big].$$
+The <em>method of moments</em> (MoM) estimator solves the $k$ equations $m_j=\mu_j(\theta)$, $j=1,\dots,k$, for $\theta$.
+</div>
+
+<h3>Examples</h3>
+<ul>
+<li><strong>$N(\mu,\sigma^2)$.</strong> $m_1=\mu$ and $m_2=\sigma^2+\mu^2$ give $\hat\mu=\bar X$ and $\hat\sigma^2=m_2-\bar X^2=\frac1n\sum(X_i-\bar X)^2$ &mdash; the <em>biased</em> variance, which also happens to be the MLE.</li>
+<li><strong>$\mathrm{Gamma}(\alpha,\beta)$</strong> (shape, scale). Since $\mu_1=\alpha\beta$ and $\mu_2-\mu_1^2=\alpha\beta^2$,
+$$\hat\beta=\frac{m_2-m_1^2}{m_1},\qquad \hat\alpha=\frac{m_1^2}{m_2-m_1^2}.$$
+Closed form, no optimization &mdash; the MLE here needs Newton iterations on a digamma equation.</li>
+<li><strong>$\mathrm{Binomial}(k,p)$, both unknown.</strong> $\hat p=1-(m_2-m_1^2)/m_1$ and $\hat k=m_1/\hat p$. Nothing prevents $\hat p\le0$ or a non-integer, even negative, $\hat k$: MoM can leave the parameter space entirely.</li>
+</ul>
+
+<div class="box thm">
+<span class="label">Theorem (consistency).</span>
+Suppose $\mu_1,\dots,\mu_k$ are finite, the map $\theta\mapsto(\mu_1(\theta),\dots,\mu_k(\theta))$ is injective with continuous inverse $g$ on a neighborhood of the true moment vector, and $\hat\theta=g(m_1,\dots,m_k)$. Then $\hat\theta\xrightarrow{P}\theta$.
+<p class="proof-label">Proof.</p>
+By the WLLN applied coordinatewise, $m_j\xrightarrow{P}\mu_j(\theta)$ for each $j$, hence the vector $(m_1,\dots,m_k)\xrightarrow{P}(\mu_1,\dots,\mu_k)$. The continuous mapping theorem (&sect;5.5) gives $g(m_1,\dots,m_k)\xrightarrow{P}g(\mu_1,\dots,\mu_k)=\theta$. <span class="qed">&#8718;</span>
+<br>So MoM is consistent essentially for free. Consistency is a low bar, and it is <em>all</em> the method promises.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; consistent, but unstable for small $n$</div>
+<p>$\mathrm{Gamma}(\alpha{=}3,\beta{=}2)$. Because $\hat\alpha=m_1^2/(m_2-m_1^2)$ divides by a noisy variance estimate, its sampling distribution is badly right-skewed at $n=10$:</p>
+<pre>n=  10: alpha_hat mean=4.4167  median=3.7949  q05=1.7616  q95=9.0586   (true 3)
+n=  50: alpha_hat mean=3.2508  median=3.1680  q05=2.1724  q95=4.6041   (true 3)
+n= 500: alpha_hat mean=3.0274  median=3.0265  q05=2.6603  q95=3.4108   (true 3)</pre>
+<p>At $n=10$ the mean ($4.42$) sits far above the median ($3.79$) and the 95th percentile is three times the truth. Consistency is visible by $n=500$, but it says nothing about $n=10$.</p>
+</div>
+
+<div class="box remark">
+<span class="label">When MoM is outright incoherent.</span>
+For $X_i$ iid $\mathrm{Uniform}(0,\theta)$, $\mu_1=\theta/2$ gives $\hat\theta_{\mathrm{MoM}}=2\bar X$. But the data <em>prove</em> $\theta\ge X_{(n)}$, and $2\bar X\lt X_{(n)}$ happens often. When it does, the MoM estimate assigns likelihood zero to the sample you actually observed &mdash; it is not merely inefficient, it is logically inconsistent with the data.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; Uniform$(0,1)$, $n=10$, $200{,}000$ reps</div>
+<pre>P(2*Xbar &lt; X_(n)) = 0.2868     &lt;- estimate below an observed value
+
+MSE  MoM   2*Xbar          = 0.03314    theory 1/(3n)         = 0.03333
+MSE  MLE   X_(n)           = 0.01516    theory 2/((n+1)(n+2)) = 0.01515
+MSE  UMVUE ((n+1)/n)X_(n)  = 0.00833    theory 1/(n(n+2))     = 0.00833</pre>
+<p>MoM is incoherent $29\%$ of the time and carries four times the MSE of the UMVUE. Note also that the MLE's MSE is $O(n^{-2})$ while MoM's is $O(n^{-1})$: here the difference is not a constant factor but a rate.</p>
+</div>
+
+<div class="box remark">
+<span class="label">Real-world: MoM is alive and useful.</span>
+Generalized method of moments (GMM) is the workhorse of empirical economics precisely because it needs only moment conditions, not a full likelihood &mdash; you can estimate without committing to a distribution. MoM also supplies cheap starting values for the iterative optimizers in &sect;7.2.2 and &sect;7.2.4, and spectral/moment methods give provably consistent initializations for latent-variable models where likelihood surfaces are non-convex. Use it to start, not to finish.
+</div>
+
 <h3>&sect;7.2.2 Maximum Likelihood Estimators</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+For observed $x$, the MLE is any $\hat\theta(x)\in\arg\max_{\theta\in\Theta}L(\theta\mid x)$, where $L(\theta\mid x)=f(x\mid\theta)$. Equivalently maximize $\ell(\theta)=\log L(\theta\mid x)$. The MLE need not exist, and need not be unique.
+</div>
+
+<h3>Examples, including where calculus fails</h3>
+<ul>
+<li><strong>Bernoulli$(p)$.</strong> $\ell(p)=t\log p+(n-t)\log(1-p)$ with $t=\sum x_i$; setting $\ell'=0$ gives $\hat p=\bar x$. (Check the boundary: for $t=0$ or $t=n$ the maximum is at $0$ or $1$.)</li>
+<li><strong>$N(\mu,\sigma^2)$.</strong> $\hat\mu=\bar x$ and $\hat\sigma^2=\frac1n\sum(x_i-\bar x)^2$ &mdash; biased low.</li>
+<li><strong>$\mathrm{Uniform}(0,\theta)$.</strong> $L(\theta\mid x)=\theta^{-n}\mathbf 1\{\theta\ge x_{(n)}\}$. The derivative is never zero on the feasible region; $\theta^{-n}$ is strictly decreasing, so the maximum sits at the left endpoint $\hat\theta=x_{(n)}$. Differentiating blindly here produces nothing &mdash; you must look at the shape of $L$.</li>
+</ul>
+
+<div class="box thm">
+<span class="label">Proposition (MLE depends on the data only through a sufficient statistic).</span>
+If $T$ is sufficient for $\theta$, then any MLE is a function of $T$.
+<p class="proof-label">Proof.</p>
+By the Factorization Theorem (&sect;6.2.1), $L(\theta\mid x)=g(T(x)\mid\theta)h(x)$ with $h\ge0$ free of $\theta$. For fixed $x$, maximizing over $\theta$ is unaffected by the positive constant $h(x)$, so $\arg\max_\theta L(\theta\mid x)=\arg\max_\theta g(T(x)\mid\theta)$, which depends on $x$ only via $T(x)$. <span class="qed">&#8718;</span>
+<br>This is the promised link: the likelihood-shape statistic of &sect;6.3.1 is minimal sufficient, and the MLE reads off a feature of that shape.
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (invariance of the MLE).</span>
+Let $\hat\theta$ be an MLE of $\theta$. (a) If $\tau$ is one-to-one, the MLE of $\eta=\tau(\theta)$ is $\tau(\hat\theta)$. (b) For general $\tau$, define the <em>induced likelihood</em> $L^*(\eta\mid x)=\sup_{\{\theta:\tau(\theta)=\eta\}}L(\theta\mid x)$; then $\tau(\hat\theta)$ maximizes $L^*$.
+<p class="proof-label">Proof.</p>
+(a) Reparametrize: $\theta=\tau^{-1}(\eta)$, so $L(\tau^{-1}(\eta)\mid x)$ is maximized exactly when $\eta=\tau(\hat\theta)$, since $\tau^{-1}$ is a bijection of $\Theta$ onto the new parameter set.
+(b) For every $\eta$, $L^*(\eta\mid x)=\sup_{\tau(\theta)=\eta}L(\theta\mid x)\le\sup_\theta L(\theta\mid x)=L(\hat\theta\mid x)$. Taking $\eta_0=\tau(\hat\theta)$, the constraint set $\{\theta:\tau(\theta)=\eta_0\}$ contains $\hat\theta$, so $L^*(\eta_0\mid x)=L(\hat\theta\mid x)$, the largest possible value. Hence $\eta_0$ maximizes $L^*$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Why invariance matters, and what it costs.</span>
+Invariance is enormously convenient: the MLE of $\sigma$ is $\sqrt{\hat\sigma^2}$, the MLE of $e^{-\lambda}$ is $e^{-\hat\lambda}$, no new derivation needed. Compare with unbiasedness, which has no such property: $E[\hat\sigma^2]=\sigma^2$ does not give $E[\hat\sigma]=\sigma$, because $\sqrt{\cdot}$ is concave (Jensen, as in &sect;5.2). Invariance also tells you that <em>bias is not invariant</em>, which should lower your estimate of how fundamental unbiasedness is.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the MLE of $\sigma^2$ is biased but has smaller MSE</div>
+<p>$N(0,\sigma^2{=}4)$, $n=10$, $200{,}000$ reps. Three multiples of $SS=\sum(X_i-\bar X)^2$:</p>
+<pre>S^2 (divisor n-1): E=3.9994 (4)       MSE=3.5441   theory 2s^4/(n-1)   = 3.5556
+MLE (divisor n)  : E=3.5995 (3.6)     MSE=3.0311   theory (2n-1)s^4/n^2= 3.0400
+divisor n+1      : E=3.2723 (3.2727)  MSE=2.9021   theory 2s^4/(n+1)   = 2.9091
+
+invariance: MLE of sigma = sqrt(MLE of sigma^2): E=1.8455  theory 1.8455  (sigma=2)</pre>
+<p>The unbiased $S^2$ has the <em>largest</em> MSE of the three. The MLE trades a little bias for a bigger variance reduction, and &sect;7.3.1 shows divisor $n+1$ is the MSE-optimal multiple. Meanwhile $E[\hat\sigma]=1.8455\ne2$: unbiasedness did not survive the square root, exactly as Jensen predicts.</p>
+</div>
+
+<div class="box remark">
+<span class="label">The MLE is a maximization problem, not a formula.</span>
+For $X_i$ iid Cauchy with location $\theta$, $\ell(\theta)=-\sum_i\log\big(1+(x_i-\theta)^2\big)$ and the score equation
+$$\sum_{i=1}^n\frac{2(x_i-\theta)}{1+(x_i-\theta)^2}=0$$
+clears denominators into a polynomial of degree $2n-1$, so it can have up to $2n-1$ roots. Solving $\ell'=0$ numerically and stopping at the first root can land you on a local maximum or even a local minimum.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; multimodal likelihoods are common at small $n$</div>
+<p>Cauchy location, $\ell$ evaluated on a grid over $[-30,30]$ at spacing $0.05$, $1500$ samples per $n$:</p>
+<pre>n=  5: fraction of samples with &gt;1 local max in the log-likelihood = 0.2960
+n= 15: fraction of samples with &gt;1 local max in the log-likelihood = 0.0413</pre>
+<p>At $n=5$ almost $30\%$ of samples give a multimodal likelihood. The practical lesson: for non-log-concave likelihoods, use multiple starts or a grid, and never trust a single Newton run.</p>
+</div>
+
+<div class="box remark">
+<span class="label">Real-world: MLE is the default, under other names.</span>
+Fitting logistic regression by minimizing cross-entropy <em>is</em> maximum likelihood for Bernoulli responses; least squares is maximum likelihood under Gaussian errors; Poisson regression, Cox models, and most of classical ML's loss functions are negative log-likelihoods. The reason MLE dominates is not its construction but its asymptotic behaviour &mdash; consistency and attainment of the Cram&eacute;r&ndash;Rao bound in the limit (Chapter 10). At finite $n$, as the variance simulation above shows, it is not automatically the MSE winner.
+</div>
+
 <h3>&sect;7.2.3 Bayes Estimators</h3>
+
+<div class="box def">
+<span class="label">Setup.</span>
+Treat $\theta$ as random with <em>prior</em> $\pi(\theta)$. With $f(x\mid\theta)$ the sampling density, the <em>posterior</em> is
+$$\pi(\theta\mid x)=\frac{f(x\mid\theta)\pi(\theta)}{\int f(x\mid t)\pi(t)\,dt}\;\propto\;L(\theta\mid x)\,\pi(\theta).$$
+A <em>Bayes estimator</em> is a functional of the posterior; which functional depends on the loss (&sect;7.3.4).
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (squared-error loss gives the posterior mean).</span>
+Among all estimates $a$, the posterior expected squared loss $E\big[(\theta-a)^2\mid x\big]$ is minimized uniquely at $a=E[\theta\mid x]$.
+<p class="proof-label">Proof.</p>
+Write $\mu_x=E[\theta\mid x]$ (assume finite second moment). Then
+$$E\big[(\theta-a)^2\mid x\big]=\mathrm{Var}(\theta\mid x)+(\mu_x-a)^2,$$
+since the cross term $2(\mu_x-a)E[\theta-\mu_x\mid x]$ vanishes. The first term is free of $a$ and the second is minimized uniquely at $a=\mu_x$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Conjugacy and shrinkage.</span>
+For $X\sim\mathrm{Binomial}(n,p)$ with prior $p\sim\mathrm{Beta}(a,b)$, the posterior is $\mathrm{Beta}(a+x,\,b+n-x)$ &mdash; the same family, so the update is arithmetic. The posterior mean is
+$$E[p\mid x]=\frac{a+x}{a+b+n}=w\cdot\frac{a}{a+b}+(1-w)\,\bar x,$$
+with $w=\dfrac{a+b}{a+b+n}$: a convex combination of the prior mean and the MLE. The prior acts as $a+b$ pseudo-observations, and its pull decays like $1/n$. This is <em>shrinkage</em>, and it is the same algebra as regularization &mdash; a deliberate bias toward a prior guess, bought in exchange for variance.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; shrinkage wins near the prior, loses far from it</div>
+<p>$\mathrm{Beta}(5,5)$ prior, $n=20$, so $w=1/3$ and the estimator is $(5+\sum x_i)/30$. $60{,}000$ reps per $p$:</p>
+<pre>p=0.1: MSE Bayes=0.01985 (th. 0.01978)   MSE MLE=0.00458 (th. 0.00450)
+p=0.3: MSE Bayes=0.00910 (th. 0.00911)   MSE MLE=0.01049 (th. 0.01050)
+p=0.5: MSE Bayes=0.00559 (th. 0.00556)   MSE MLE=0.01258 (th. 0.01250)
+p=0.9: MSE Bayes=0.01969 (th. 0.01978)   MSE MLE=0.00447 (th. 0.00450)
+
+integrated risk over the prior:
+  Bayes = 0.00759 (theory 0.00758)      MLE = 0.01131 (theory 0.01136)</pre>
+<p>At $p=0.5$ the Bayes estimator halves the MSE; at $p=0.1$ it is four times worse. Neither dominates &mdash; exactly the non-existence of a uniformly best estimator proved in &sect;7.3.1. But averaged over the prior, the Bayes estimator wins by construction ($0.0076$ vs $0.0113$), which is what "Bayes" optimizes.</p>
+</div>
+
+<div class="box remark">
+<span class="label">Real-world: you are already a Bayesian in places.</span>
+Laplace smoothing ("add one to every count") is exactly the $\mathrm{Beta}(1,1)$ posterior mean, and it exists to avoid the MLE's catastrophic $\hat p=0$ on unseen categories. Ridge regression is the MAP estimate under a Gaussian prior on coefficients; LASSO is MAP under a Laplace prior. In experimentation platforms that test hundreds of variants, hierarchical/empirical-Bayes shrinkage toward a global mean is standard, because the per-arm MLE is far too noisy. The prior is where domain knowledge legitimately enters &mdash; and also where it can be smuggled in, so it should be stated.
+</div>
+
 <h3>&sect;7.2.4 The EM Algorithm</h3>
+
+<div class="box def">
+<span class="label">Setup (incomplete data).</span>
+Suppose the complete data $X=(Y,Z)$ has density $f(y,z\mid\theta)$, but only $Y=y$ is observed, so the likelihood involves a marginalization
+$$L(\theta\mid y)=\int f(y,z\mid\theta)\,dz,$$
+which is typically intractable to maximize directly. Define
+$$Q(\theta\mid\theta')=E\big[\log f(y,Z\mid\theta)\;\big|\;y,\theta'\big],$$
+the expected complete-data log-likelihood, where $Z$ is drawn from its conditional law given $y$ under $\theta'$.
+</div>
+
+<div class="box def">
+<span class="label">The algorithm.</span>
+From $\theta^{(t)}$: <strong>E-step</strong>, form $Q(\theta\mid\theta^{(t)})$; <strong>M-step</strong>, set $\theta^{(t+1)}=\arg\max_\theta Q(\theta\mid\theta^{(t)})$. Repeat. The point is that $Q$ is usually maximized in closed form even when $L$ is not.
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (monotonicity).</span>
+The observed-data log-likelihood never decreases: $\ell(\theta^{(t+1)}\mid y)\ge\ell(\theta^{(t)}\mid y)$ for every $t$.
+<p class="proof-label">Proof.</p>
+Write $k(z\mid y,\theta)=f(y,z\mid\theta)/L(\theta\mid y)$ for the conditional density of the missing data, so that for any $\theta$,
+$$\log L(\theta\mid y)=\log f(y,z\mid\theta)-\log k(z\mid y,\theta).$$
+Take $E[\,\cdot\mid y,\theta']$ on both sides; the left side is free of $z$, giving
+$$\ell(\theta\mid y)=Q(\theta\mid\theta')-H(\theta\mid\theta'),$$
+where $H(\theta\mid\theta')=E[\log k(Z\mid y,\theta)\mid y,\theta']$. Now put $\theta'=\theta^{(t)}$ and difference at $\theta^{(t+1)}$ and $\theta^{(t)}$:
+$$\begin{aligned}\ell(\theta^{(t+1)})-\ell(\theta^{(t)})=&\big[Q(\theta^{(t+1)}\mid\theta^{(t)})-Q(\theta^{(t)}\mid\theta^{(t)})\big]\\ &+\big[H(\theta^{(t)}\mid\theta^{(t)})-H(\theta^{(t+1)}\mid\theta^{(t)})\big].\end{aligned}$$
+The first bracket is $\ge0$ because the M-step maximizes $Q(\cdot\mid\theta^{(t)})$. The second bracket equals the Kullback&ndash;Leibler divergence
+$$\int k(z\mid y,\theta^{(t)})\log\frac{k(z\mid y,\theta^{(t)})}{k(z\mid y,\theta^{(t+1)})}\,dz\;\ge\;0$$
+by Jensen's inequality (strict unless the two conditional laws agree a.e.). Both brackets are nonnegative. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">What monotonicity does and does not give you.</span>
+It guarantees the sequence $\ell(\theta^{(t)})$ increases and hence converges (if bounded above). It does <em>not</em> guarantee convergence to a global maximum, nor even to a stationary point without extra regularity, nor that $\theta^{(t)}$ converges at all. In practice EM is prized because every iteration is cheap and safe, and dreaded because its fixed point depends on where you started.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; a two-component normal mixture</div>
+<p>Data: $n=400$ from $0.35\,N(3,1)+0.65\,N(0,1)$, variances known, estimating $(w,\mu_1,\mu_2)$. E-step computes responsibilities $r_i=P(\text{component }2\mid x_i)$; M-step takes weighted means.</p>
+<pre>EM from (w,mu1,mu2) = (0.5,-1,1): converged in 39 iterations to
+   w=0.3618  mu1=-0.0425  mu2=3.0081      (true 0.35, 0.0, 3.0)
+
+log-likelihood at iterations 0,1,2,3,5,10,last:
+  -995.852, -840.909, -816.396, -798.465, -780.648, -775.194, -775.119
+
+iterations where the log-likelihood DECREASED: 0     (theorem says 0)
+
+40 random starts: best final loglik = -775.119, worst = -775.119,
+                  reached the best value 40/40 times</pre>
+<p>Monotonicity holds exactly, as proved. I should be straight about the last line: in this <em>well-separated</em> mixture every random start found the same optimum, so this run does <strong>not</strong> demonstrate a local-maximum trap. Such traps are real and well documented for overlapping components and higher-dimensional mixtures &mdash; but I did not reproduce one here, and I am not going to claim otherwise.</p>
+</div>
+
+<div class="box remark">
+<span class="label">A failure that is not about optimization at all.</span>
+Let the component variances be free parameters. Pin $\mu_1$ to a single observation $x_1$ and let $v_1\downarrow0$. The term for $x_1$ contributes $(1-w)/\sqrt{2\pi v_1}\to\infty$, while every other term stays bounded below by its component-2 contribution. So
+$$\ell\;=\;\text{const}-\tfrac12\log v_1+o(1)\;\longrightarrow\;+\infty .$$
+The likelihood is <em>unbounded</em>: the unrestricted normal-mixture MLE does not exist. No algorithm can find a maximizer that is not there.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the likelihood diverges, at the predicted rate</div>
+<p>$\mu_1$ pinned at the observation $x_1=2.4544$, component 2 held fixed, $v_1$ driven to zero:</p>
+<pre>   v1       |  log-likelihood  |  predicted: const - 0.5*log(v1)
+ 1e-8       |    -1271.637     |     -1271.637
+ 1e-16      |    -1262.426     |     -1262.426
+ 1e-30      |    -1246.308     |     -1246.308
+ 1e-60      |    -1211.770     |     -1211.770
+ 1e-120     |    -1142.692     |     -1142.692
+ 1e-240     |    -1004.537     |     -1004.537</pre>
+<p>The computed log-likelihood matches $-\tfrac12\log v_1+\text{const}$ to three decimals over $230$ orders of magnitude, and climbs without bound. The fix is modelling, not computing: bound the variances away from zero, penalize them, or put a prior on them (which is why Bayesian mixtures are better behaved).</p>
+</div>
+
+<div class="box remark">
+<span class="label">Real-world.</span>
+EM is the Baum&ndash;Welch algorithm for HMMs, the standard fitter for Gaussian mixtures and latent class models, the engine behind multiple imputation for missing survey data, and the template for variational inference (where the M-step maximizes a lower bound instead). Whenever a model has latent variables, some descendant of this argument is doing the work.
+</div>
+
+<!-- ============================= 7.3 ============================= -->
 <h2>&sect;7.3 Methods of Evaluating Estimators</h2>
+
 <h3>&sect;7.3.1 Mean Squared Error</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+$\mathrm{MSE}(\theta,W)=E_\theta\big[(W-\theta)^2\big]$, and $\mathrm{Bias}_\theta(W)=E_\theta[W]-\theta$. An estimator is <em>unbiased</em> if its bias is $0$ for every $\theta$.
+</div>
+
+<div class="box thm">
+<span class="label">Proposition (bias&ndash;variance decomposition).</span>
+$$\mathrm{MSE}(\theta,W)=\mathrm{Var}_\theta(W)+\big[\mathrm{Bias}_\theta(W)\big]^2 .$$
+<p class="proof-label">Proof.</p>
+Let $m=E_\theta W$. Then
+$$\begin{aligned}E_\theta(W-\theta)^2&=E_\theta\big[(W-m)+(m-\theta)\big]^2\\ &=E_\theta(W-m)^2+2(m-\theta)E_\theta(W-m)\\ &\quad+(m-\theta)^2,\end{aligned}$$
+and the middle term vanishes since $E_\theta(W-m)=0$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box thm">
+<span class="label">Proposition (no uniformly best estimator exists).</span>
+Suppose the family $\{P_\theta\}$ has common support and $\Theta$ contains at least two points. Then there is no estimator $W^*$ with $\mathrm{MSE}(\theta,W^*)\le\mathrm{MSE}(\theta,W)$ for every $\theta$ and every competing estimator $W$.
+<p class="proof-label">Proof.</p>
+Fix $\theta_0$ and consider the constant estimator $W\equiv\theta_0$, which has $\mathrm{MSE}(\theta_0,W)=0$. A uniformly best $W^*$ would need $\mathrm{MSE}(\theta_0,W^*)=0$, forcing $W^*=\theta_0$ almost surely under $P_{\theta_0}$. Repeating with $\theta_1\ne\theta_0$ forces $W^*=\theta_1$ a.s. under $P_{\theta_1}$. Common support makes $P_{\theta_0}$ and $P_{\theta_1}$ mutually absolutely continuous, so the two conclusions contradict each other. <span class="qed">&#8718;</span>
+<br>This is why &sect;7.3 proceeds by <em>restricting the class</em> of estimators (to unbiased ones, &sect;7.3.2&ndash;7.3.3) or by <em>summarizing the risk function</em> into one number (Bayes risk, &sect;7.3.4). Without one of those moves, "best" is not even well defined.
+</div>
+
+<div class="box thm">
+<span class="label">Example (the MSE-optimal multiple of $SS$).</span>
+For $X_i$ iid $N(\mu,\sigma^2)$ let $SS=\sum(X_i-\bar X)^2$ and consider estimators $cSS$ of $\sigma^2$. The MSE is minimized at $c=1/(n+1)$, where it equals $2\sigma^4/(n+1)$.
+<p class="proof-label">Proof.</p>
+By Theorem 5.3.1, $SS/\sigma^2\sim\chi^2_{n-1}$, so $E[SS]=(n-1)\sigma^2$ and $E[SS^2]=\sigma^4\big[2(n-1)+(n-1)^2\big]=\sigma^4(n-1)(n+1)$. Hence
+$$\begin{aligned}E(cSS-\sigma^2)^2=\;&c^2\sigma^4(n-1)(n+1)\\ &-2c\sigma^4(n-1)+\sigma^4 .\end{aligned}$$
+This is a convex quadratic in $c$; setting the derivative to zero gives $c(n-1)(n+1)=(n-1)$, so $c=1/(n+1)$. Substituting returns $\sigma^4\big[1-\frac{n-1}{n+1}\big]=\frac{2\sigma^4}{n+1}$. <span class="qed">&#8718;</span>
+<br>So the ordering is $\mathrm{MSE}$ at divisor $n+1$ $\lt$ divisor $n$ (MLE) $\lt$ divisor $n-1$ ($S^2$, the unbiased one) &mdash; confirmed numerically in &sect;7.2.2. Unbiasedness costs MSE here.
+</div>
+
+<div class="box remark">
+<span class="label">So why does anyone use $S^2$?</span>
+Three honest reasons, none of them "it has the lowest MSE". (i) The gain from $n+1$ is $O(n^{-2})$ and vanishes quickly. (ii) Unbiasedness composes: in ANOVA and regression, sums and ratios of unbiased mean squares give exact $F$ distributions and exact tests (Chapter 11), which the biased versions would break. (iii) The $n+1$ rule is optimal only under normality and squared error; it is not robust. Choosing $S^2$ is a choice about which guarantee you want, not an MSE victory.
+</div>
+
+<div class="box remark">
+<span class="label">Unbiasedness can be absurd.</span>
+Let $X\sim\mathrm{Poisson}(\lambda)$ and estimate $\tau=e^{-2\lambda}\in(0,1)$. Then
+$$E\big[(-1)^X\big]=\sum_{k\ge0}(-1)^k\frac{e^{-\lambda}\lambda^k}{k!}=e^{-\lambda}e^{-\lambda}=e^{-2\lambda},$$
+so $(-1)^X$ is <em>exactly unbiased</em> &mdash; while only ever returning $-1$ or $+1$ to estimate a number in $(0,1)$. Unbiasedness is a statement about an average over repetitions, not a promise about any particular estimate.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check</div>
+<p>$\mathrm{Poisson}(1)$, $200{,}000$ draws, target $e^{-2}=0.1353$:</p>
+<pre>E[(-1)^X] = +0.1308   (unbiased; it only ever takes the values -1 and +1)
+Var       =  0.9829   theory 1-exp(-4) = 0.9817
+
+bias-variance check for the MLE of sigma^2:
+   MSE = 3.0311     var + bias^2 = 3.0311</pre>
+</div>
+
 <h3>&sect;7.3.2 Best Unbiased Estimators</h3>
+
+<div class="box def">
+<span class="label">Definition.</span>
+$W$ is a <em>uniformly minimum variance unbiased estimator</em> (UMVUE) of $\tau(\theta)$ if $E_\theta W=\tau(\theta)$ for all $\theta$ and $\mathrm{Var}_\theta(W)\le\mathrm{Var}_\theta(W')$ for all $\theta$ and all unbiased $W'$. Within the unbiased class, MSE equals variance, so this is the restricted "best" that &sect;7.3.1 showed we must settle for.
+</div>
+
+<div class="box thm">
+<span class="label">Cram&eacute;r&ndash;Rao Inequality.</span>
+Let $X\sim f(x\mid\theta)$ with $\Theta$ an open interval, and assume the regularity conditions: the support does not depend on $\theta$, $\partial_\theta f$ exists, and differentiation and integration may be interchanged in both $\int f\,dx$ and $\int Wf\,dx$. If $E_\theta[W]=\tau(\theta)$ and $\mathrm{Var}_\theta(W)\lt\infty$, then
+$$\mathrm{Var}_\theta(W)\;\ge\;\frac{\big[\tau'(\theta)\big]^2}{I_n(\theta)},\qquad I_n(\theta)=E_\theta\big[S(\theta)^2\big],$$
+where $S(\theta)=\partial_\theta\log f(X\mid\theta)$ is the <em>score</em> and $I_n$ the Fisher information.
+<p class="proof-label">Proof.</p>
+First, the score has mean zero: differentiating $\int f(x\mid\theta)\,dx=1$ and interchanging,
+$$E_\theta[S]=\int\frac{\partial_\theta f}{f}\,f\,dx=\partial_\theta\!\int f\,dx=0 .$$
+Next, differentiate $\tau(\theta)=\int W(x)f(x\mid\theta)\,dx$ and interchange:
+$$\tau'(\theta)=\int W\,\partial_\theta f\,dx=\int W\,S\,f\,dx=E_\theta[WS].$$
+Since $E_\theta[S]=0$, this says $\tau'(\theta)=\mathrm{Cov}_\theta(W,S)$. By the Cauchy&ndash;Schwarz inequality,
+$$\big[\tau'(\theta)\big]^2=\mathrm{Cov}_\theta(W,S)^2\le\mathrm{Var}_\theta(W)\,\mathrm{Var}_\theta(S),$$
+and $\mathrm{Var}_\theta(S)=E_\theta[S^2]=I_n(\theta)$. Rearranging gives the bound. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box thm">
+<span class="label">Corollary (when the bound is attained).</span>
+Equality holds at $\theta$ iff $W-\tau(\theta)=a(\theta)S(\theta)$ almost surely, for some function $a(\theta)$ &mdash; i.e. iff the centered estimator is proportional to the score.
+<p class="proof-label">Proof.</p>
+Cauchy&ndash;Schwarz is an equality precisely when the two random variables are almost surely proportional; here they are $W-E_\theta W$ and $S-E_\theta S=S$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">Fisher information, computed.</span>
+For iid samples the score is a sum of independent mean-zero terms, so $I_n(\theta)=n\,I_1(\theta)$. A second differentiation of $E_\theta[S]=0$ gives the often-easier form $I_1(\theta)=-E_\theta\big[\partial^2_\theta\log f(X\mid\theta)\big]$. Three standard cases:
+<table class="data">
+<tr><th>Model</th><th>score $S$</th><th>$I_1(\theta)$</th><th>CRLB for the mean</th></tr>
+<tr><td>Bernoulli$(p)$</td><td>$\frac{x-p}{p(1-p)}$</td><td>$\frac{1}{p(1-p)}$</td><td>$\frac{p(1-p)}{n}$</td></tr>
+<tr><td>Poisson$(\lambda)$</td><td>$\frac{x}{\lambda}-1$</td><td>$\frac1\lambda$</td><td>$\frac{\lambda}{n}$</td></tr>
+<tr><td>$N(\mu,\sigma^2)$, $\sigma$ known</td><td>$\frac{x-\mu}{\sigma^2}$</td><td>$\frac{1}{\sigma^2}$</td><td>$\frac{\sigma^2}{n}$</td></tr>
+</table>
+In each case $\bar X$ is unbiased with variance exactly equal to the bound, so $\bar X$ is efficient. That is no accident: for a one-parameter exponential family in natural form, the score for the mean parameter is an affine function of $\bar X$, which is precisely the attainment condition.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the bound is attained</div>
+<p>$n=20$, $200{,}000$ reps each:</p>
+<pre>Bernoulli(0.3), estimate p : Var(Xbar)=0.01048  theory 0.01050  CRLB 0.01050
+Poisson(2), estimate lambda: Var(Xbar)=0.10046  theory 0.10000  CRLB 0.10000
+Normal(0,4), estimate mu   : Var(Xbar)=0.19939  theory 0.20000  CRLB 0.20000</pre>
+</div>
+
+<div class="box remark">
+<span class="label">But the bound is often <em>not</em> attainable.</span>
+Take $X_i$ iid $\mathrm{Poisson}(\lambda)$ and $\tau(\lambda)=e^{-\lambda}=P(X=0)$. With $T=\sum X_i\sim\mathrm{Poisson}(n\lambda)$ and $a=\frac{n-1}{n}$, the identity $E[a^T]=e^{n\lambda(a-1)}=e^{-\lambda}$ shows $a^T$ is unbiased; it is a function of a complete sufficient statistic, so by &sect;7.3.3 it is <em>the</em> UMVUE. Its exact variance is
+$$\mathrm{Var}\big(a^T\big)=e^{\lambda(1-2n)/n}-e^{-2\lambda},$$
+whereas the CRLB for $\tau$ is $\tau'(\lambda)^2/I_n=\lambda e^{-2\lambda}/n$. At $n=10,\lambda=1$ these are $0.01423$ and $0.01353$: the best possible unbiased estimator is strictly worse than the bound. So a gap between an estimator's variance and the CRLB does <em>not</em> prove the estimator is improvable &mdash; which is exactly why we need Lehmann&ndash;Scheff&eacute; rather than the CRLB as the main tool.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; UMVUE above the bound</div>
+<p>$\mathrm{Poisson}(1)$, $n=10$, $200{,}000$ reps, $\tau=e^{-1}=0.36788$:</p>
+<pre>crude  1{X1=0}    : E=0.36845   Var=0.23269   theory 0.23254
+UMVUE  ((n-1)/n)^T: E=0.36763   Var=0.01425   theory 0.01423
+CRLB   lambda*exp(-2*lambda)/n           =    0.01353   &lt;- strictly below</pre>
+</div>
+
 <h3>&sect;7.3.3 Sufficiency and Unbiasedness</h3>
+
+<div class="box thm">
+<span class="label">Rao&ndash;Blackwell Theorem.</span>
+Let $W$ be unbiased for $\tau(\theta)$ and let $T$ be sufficient for $\theta$. Define $\phi(T)=E[W\mid T]$. Then $\phi(T)$ is a statistic, is unbiased for $\tau(\theta)$, and
+$$\mathrm{Var}_\theta\big(\phi(T)\big)\le\mathrm{Var}_\theta(W)\quad\text{for every }\theta,$$
+with equality iff $W$ is already a function of $T$ almost surely.
+<p class="proof-label">Proof.</p>
+That $\phi$ is a <em>statistic</em> is where sufficiency is used: by definition the conditional law of $X$ given $T$ is free of $\theta$, so $E[W\mid T]$ contains no unknown parameter and is computable from the data. Unbiasedness is the tower property:
+$$E_\theta\big[\phi(T)\big]=E_\theta\big[E[W\mid T]\big]=E_\theta[W]=\tau(\theta).$$
+For the variance, use the decomposition
+$$\mathrm{Var}_\theta(W)=\mathrm{Var}_\theta\big(E[W\mid T]\big)+E_\theta\big[\mathrm{Var}(W\mid T)\big],$$
+whose second term is nonnegative. Hence $\mathrm{Var}_\theta(W)\ge\mathrm{Var}_\theta(\phi(T))$, with equality iff $E_\theta[\mathrm{Var}(W\mid T)]=0$, i.e. $\mathrm{Var}(W\mid T)=0$ a.s., i.e. $W$ is a.s. a function of $T$. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box thm">
+<span class="label">Lehmann&ndash;Scheff&eacute; Theorem.</span>
+If $T$ is a <em>complete</em> sufficient statistic and $\phi(T)$ is unbiased for $\tau(\theta)$, then $\phi(T)$ is the unique UMVUE of $\tau(\theta)$.
+<p class="proof-label">Proof.</p>
+Let $W$ be any unbiased estimator of $\tau(\theta)$ and set $\phi^*(T)=E[W\mid T]$, a statistic by sufficiency, unbiased with $\mathrm{Var}(\phi^*)\le\mathrm{Var}(W)$ by Rao&ndash;Blackwell. Both $\phi$ and $\phi^*$ are unbiased, so $g=\phi-\phi^*$ satisfies $E_\theta[g(T)]=0$ for every $\theta$; completeness forces $g(T)=0$ a.s., i.e. $\phi=\phi^*$. Therefore $\mathrm{Var}_\theta(\phi(T))\le\mathrm{Var}_\theta(W)$ for every unbiased $W$ and every $\theta$, which is the UMVUE property. Uniqueness: any other UMVUE $\tilde W$ has $E_\theta[\phi-\tilde W]=0$, and applying the same completeness argument to $E[\tilde W\mid T]$ identifies it with $\phi$ a.s. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box remark">
+<span class="label">This is the payoff of Chapter 6.</span>
+The recipe is now purely mechanical: find a complete sufficient statistic, then find <em>any</em> unbiased function of it &mdash; by guessing, by solving $E_\theta[\phi(T)]=\tau(\theta)$, or by Rao&ndash;Blackwellizing something crude. Completeness guarantees there is only one such function, so you cannot pick wrong. Worked examples: for $\mathrm{Uniform}(0,\theta)$, $X_{(n)}$ is complete sufficient with $E[X_{(n)}]=\frac{n}{n+1}\theta$, so $\frac{n+1}{n}X_{(n)}$ is the UMVUE &mdash; the $0.00833$ winner in &sect;7.2.1. For $N(\mu,\sigma^2)$, $(\bar X,S^2)$ is complete sufficient and both coordinates are unbiased, so $\bar X$ and $S^2$ are the UMVUEs of $\mu$ and $\sigma^2$ &mdash; note $S^2$ wins <em>within the unbiased class</em> even though divisor $n+1$ beat it on MSE overall.
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; Rao&ndash;Blackwell in action</div>
+<p>Bernoulli$(0.5)$, $n=10$, estimating $p^2=0.25$. Start crude: $X_1X_2$ is unbiased since $E[X_1X_2]=p^2$. Condition on $T=\sum X_i$: by symmetry, given $T=t$ the pair $(X_1,X_2)$ is a draw without replacement, so
+$$E[X_1X_2\mid T=t]=\frac{t(t-1)}{n(n-1)} .$$
+$300{,}000$ reps:</p>
+<pre>crude         X1*X2          : E=0.2503  Var=0.18767  theory 0.18750
+Rao-Blackwell T(T-1)/(n(n-1)): E=0.2504  Var=0.02642  theory 0.02639
+                                              -> 7.11x variance reduction</pre>
+<p>Same mechanism in the Poisson example above: the crude $\mathbf 1\{X_1=0\}$ (unbiased for $e^{-\lambda}$) Rao&ndash;Blackwellizes to $((n-1)/n)^T$, a $16.3\times$ variance reduction. Both crude estimators throw away all but one or two observations; conditioning on the sufficient statistic puts the rest of the sample back to work. Since $T$ is complete in both cases, Lehmann&ndash;Scheff&eacute; certifies the results as <em>the</em> UMVUEs.</p>
+</div>
+
 <h3>&sect;7.3.4 Loss Function Optimality</h3>
+
+<div class="box def">
+<span class="label">Definitions.</span>
+A <em>loss function</em> $L(\theta,a)\ge0$ measures the penalty for reporting $a$ when the truth is $\theta$. The <em>risk</em> of an estimator is $R(\theta,W)=E_\theta\big[L(\theta,W(X))\big]$ &mdash; with squared-error loss this is the MSE. Given a prior $\pi$, the <em>Bayes risk</em> is $r(\pi,W)=\int R(\theta,W)\pi(\theta)\,d\theta$, and a <em>Bayes rule</em> minimizes it.
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (the Bayes rule is a posterior functional).</span>
+The Bayes risk can be written as an average over the data of the <em>posterior expected loss</em>,
+$$r(\pi,W)=\int\Big(\int L\big(\theta,W(x)\big)\pi(\theta\mid x)\,d\theta\Big)m(x)\,dx,$$
+where $m$ is the marginal density of $X$. Hence a Bayes rule may be computed pointwise: for each observed $x$, choose $W(x)$ to minimize the inner integral.
+<p class="proof-label">Proof.</p>
+Write the joint density as $f(x\mid\theta)\pi(\theta)=\pi(\theta\mid x)m(x)$ and apply Fubini (legitimate since $L\ge0$) to exchange the order of integration. Since $m\ge0$ and $W(x)$ may be chosen independently for each $x$, minimizing the integrand pointwise minimizes the whole. <span class="qed">&#8718;</span>
+</div>
+
+<div class="box thm">
+<span class="label">Theorem (three losses, three functionals).</span>
+Let $\theta$ have posterior $\pi(\cdot\mid x)$.
+(a) Squared loss $L=(\theta-a)^2$ is minimized by the posterior <strong>mean</strong>.
+(b) Absolute loss $L=|\theta-a|$ is minimized by any posterior <strong>median</strong>.
+(c) For discrete $\theta$, $0\text{-}1$ loss $L=\mathbf 1\{a\ne\theta\}$ is minimized by the posterior <strong>mode</strong>.
+<p class="proof-label">Proof.</p>
+(a) Proved in &sect;7.2.3.
+(b) Let $m$ be a posterior median, so $P(\theta\le m\mid x)\ge\tfrac12$ and $P(\theta\ge m\mid x)\ge\tfrac12$. Take $a\gt m$. Pointwise, $|t-a|-|t-m|$ equals $a-m$ for $t\le m$, equals $m-a$ for $t\ge a$, and for $m\lt t\lt a$ equals $a+m-2t\ge m-a$. So the integrand is $\ge(a-m)$ on $\{t\le m\}$ and $\ge-(a-m)$ elsewhere, giving
+$$\begin{aligned}E\big[|\theta-a|-|\theta-m|\;\big|\;x\big]\ \ge\ &(a-m)P(\theta\le m\mid x)\\ &-(a-m)P(\theta\gt m\mid x)\ \ge\ 0,\end{aligned}$$
+since $a-m\gt0$ and $P(\theta\le m\mid x)\ge\tfrac12\ge P(\theta\gt m\mid x)$. The case $a\lt m$ is symmetric.
+(c) $E[\mathbf 1\{a\ne\theta\}\mid x]=1-P(\theta=a\mid x)$, minimized by maximizing the posterior probability, i.e. at the mode. (For continuous $\theta$ this is a limiting statement: minimizing $E[\mathbf 1\{|\theta-a|\gt\varepsilon\}\mid x]$ and letting $\varepsilon\downarrow0$ picks out the posterior mode under regularity.) <span class="qed">&#8718;</span>
+</div>
+
+<div class="simbox">
+<div class="label">Simulation check &mdash; the loss picks the summary</div>
+<p>Poisson data with $n=5$, $\sum x_i=3$, prior $\mathrm{Gamma}(\text{shape }2,\text{rate }1)$ gives the posterior $\mathrm{Gamma}(\text{shape }5,\text{rate }6)$. Squared losses are exact; absolute losses use $120{,}000$ posterior draws:</p>
+<pre>posterior:  mean=0.83333   median=0.77848   mode=0.66667
+
+candidate            E[(theta-a)^2]      E|theta-a|
+posterior mean          0.13889            0.29268
+posterior median        0.14190            0.28921
+posterior mode          0.16667            0.30293
+
+grid scan over a in [0.60,0.90], step 0.005:
+   argmin of E[(theta-a)^2] = 0.835   (mean   = 0.8333)
+   argmin of E|theta-a|     = 0.775   (median = 0.7785)</pre>
+<p>Each loss is minimized by its own functional, and the grid scan confirms the minimizers independently. On a skewed posterior these three numbers differ materially ($0.67$ to $0.83$, a $25\%$ spread), so "the" Bayes estimate is meaningless until the loss is named.</p>
+</div>
+
+<div class="box remark">
+<span class="label">Real-world: the loss is a business decision, not a statistical one.</span>
+Asymmetric losses are the norm. Understocking inventory loses a sale while overstocking loses storage, so the optimal order quantity is a posterior <em>quantile</em>, not a mean. Quantile regression is exactly minimization of an asymmetrically weighted absolute loss. Under-forecasting server capacity causes outages while over-forecasting wastes money, at very different rates. Reporting a posterior mean by default is choosing squared error by default &mdash; usually without noticing, and often wrongly.
+</div>
+
+<!-- ============================= wrap ============================= -->
+<h2>Where this leaves you</h2>
+<p>The two halves of the chapter should now feel genuinely separate. <strong>Construction</strong> gave four recipes: moments (cheap, consistent, occasionally incoherent), likelihood (invariant, sufficient-statistic-based, asymptotically excellent, but a possibly unbounded or multimodal optimization), Bayes (shrinkage, optimal on average against its prior), and EM (safe monotone ascent toward a merely local answer). <strong>Evaluation</strong> showed that no estimator is uniformly best, so we either restrict to unbiased estimators &mdash; where Cram&eacute;r&ndash;Rao gives a bound that is sometimes unattainable and Rao&ndash;Blackwell plus Lehmann&ndash;Scheff&eacute; deliver the actual UMVUE from Chapter 6's complete sufficient statistics &mdash; or we fix a loss and prior and take the corresponding posterior functional.</p>
+<p>Two threads carry forward. The ingredients of the Cram&eacute;r&ndash;Rao bound (the score and Fisher information) return in Chapter 10 as the asymptotic variance of the MLE, which is what finally justifies maximum likelihood. And the risk/loss framework of &sect;7.3.4 reappears in &sect;8.3.5 and &sect;9.3.4, where testing and interval estimation get the same decision-theoretic treatment.</p>
 
 <div class="pagenav">
   <a href="../ch06/index.html">&larr; 6. Principles of Data Reduction</a>

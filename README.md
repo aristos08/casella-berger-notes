@@ -19,7 +19,7 @@ Each chapter also has a **LaTeX twin** (`site/chNN/chNN.tex`) — paste into [Ov
 |---------|-------|--------|
 | 5 | Properties of a Random Sample | ✅ complete |
 | 6 | Principles of Data Reduction | ✅ complete |
-| 7 | Point Estimation | ⬜ skeleton |
+| 7 | Point Estimation | ✅ complete |
 | 8 | Hypothesis Testing | ⬜ skeleton |
 | 9 | Interval Estimation | ⬜ skeleton |
 | 10 | Asymptotic Evaluations | ⬜ skeleton |
@@ -37,6 +37,7 @@ python3 simulations/sim_ch5.py
 python3 simulations/sim_ch5_part2.py
 python3 simulations/sim_ch5_extra.py
 python3 simulations/sim_ch6.py
+python3 simulations/sim_ch7.py
 ```
 
 (No third-party dependencies — only `random`, `math`, `statistics`.)
