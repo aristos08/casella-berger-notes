@@ -20,7 +20,7 @@ Each chapter also has a **LaTeX twin** (`site/chNN/chNN.tex`) — paste into [Ov
 | 5 | Properties of a Random Sample | ✅ complete |
 | 6 | Principles of Data Reduction | ✅ complete |
 | 7 | Point Estimation | ✅ complete |
-| 8 | Hypothesis Testing | ⬜ skeleton |
+| 8 | Hypothesis Testing | ✅ complete |
 | 9 | Interval Estimation | ⬜ skeleton |
 | 10 | Asymptotic Evaluations | ⬜ skeleton |
 | 11 | ANOVA &amp; Regression | ⬜ skeleton |
@@ -38,6 +38,7 @@ python3 simulations/sim_ch5_part2.py
 python3 simulations/sim_ch5_extra.py
 python3 simulations/sim_ch6.py
 python3 simulations/sim_ch7.py
+python3 simulations/sim_ch8.py
 ```
 
 (No third-party dependencies — only `random`, `math`, `statistics`.)
@@ -53,3 +54,23 @@ site/
     └── chNN.tex        LaTeX twin
 simulations/            seeded Python simulation scripts
 ```
+
+## Caveats
+
+These notes were drafted by an AI assistant working interactively. Known limitations, also
+surfaced on the site's landing page and as inline **⚠ Flag** boxes on individual chapter pages:
+
+- **Cross-check against the book.** Every proof was written out rather than copied, so every
+  proof is also a place an error could have entered. C&B (2nd ed.) is the authority.
+- **The `.tex` files have never been compiled** — no TeX engine was available where they were
+  written. Expect small fixes on first compile.
+- **The rendered pages were never viewed by their author** (no browser, no outside network).
+  Layout, math rendering and overflow were checked by script, not by eye.
+- **Simulation numbers come from single seeded runs.** Nothing is invented, but Monte Carlo
+  error affects the last digit or two; theoretical targets are printed alongside. Re-running
+  the scripts reproduces the quoted figures exactly.
+- **Pure standard library only** — no NumPy/SciPy. Distributions, quantiles and the incomplete
+  beta function are implemented in `simulations/statlib.py`, which self-checks against published
+  table values but is not a tested numerical library.
+- **Simulations illustrate, they do not prove.** A matching simulation is evidence a derivation
+  was transcribed correctly, not that a theorem is true.

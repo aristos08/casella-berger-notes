@@ -16,7 +16,7 @@ MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$
   <a class="chip current done" href="../ch05/index.html">5</a>
   <a class="chip done" href="../ch06/index.html">6</a>
   <a class="chip done" href="../ch07/index.html">7</a>
-  <a class="chip" href="../ch08/index.html">8</a>
+  <a class="chip done" href="../ch08/index.html">8</a>
   <a class="chip" href="../ch09/index.html">9</a>
   <a class="chip" href="../ch10/index.html">10</a>
   <a class="chip" href="../ch11/index.html">11</a>
@@ -363,10 +363,10 @@ $X_n\xrightarrow{P}X$ if for every $\varepsilon>0$, $P(|X_n-X|>\varepsilon)\to 0
 </div>
 <div class="box thm">
 <span class="label">Weak Law of Large Numbers (WLLN).</span>
-If $X_i$ iid with $E[X_1]=\mu$ and $\mathrm{Var}(X_1)=\sigma^2<\infty$, then $\bar X_n\xrightarrow{P}\mu$.
+If $X_i$ iid with $E[X_1]=\mu$ and $\mathrm{Var}(X_1)=\sigma^2\lt\infty$, then $\bar X_n\xrightarrow{P}\mu$.
 <p class="proof-label">Proof.</p>
 $E[\bar X_n]=\mu$, $\mathrm{Var}(\bar X_n)=\sigma^2/n$. Chebyshev: $P(|\bar X_n-\mu|>\varepsilon)\le \frac{\sigma^2/n}{\varepsilon^2}\to 0.$ <span class="qed">&#8718;</span>
-<br>(The finite-variance assumption is removable &mdash; the WLLN holds under just $E|X_1|<\infty$ &mdash; but Chebyshev is the honest one-liner.)
+<br>(The finite-variance assumption is removable &mdash; the WLLN holds under just $E|X_1|\lt\infty$ &mdash; but Chebyshev is the honest one-liner.)
 </div>
 <div class="simbox">
 <div class="label">Simulation check</div>
@@ -385,7 +385,12 @@ $X_n\xrightarrow{a.s.}X$ if $P(\{\omega: X_n(\omega)\to X(\omega)\})=1$ &mdash; 
 </div>
 <div class="box thm">
 <span class="label">Strong Law (SLLN), stated.</span>
-If $X_i$ iid with $E|X_1|<\infty$, then $\bar X_n\xrightarrow{a.s.}\mu$. (Proof deferred &mdash; it needs Kolmogorov's maximal inequality or a truncation argument; not a one-liner.)
+If $X_i$ iid with $E|X_1|\lt\infty$, then $\bar X_n\xrightarrow{a.s.}\mu$. (Proof deferred &mdash; it needs Kolmogorov's maximal inequality or a truncation argument; not a one-liner.)
+</div>
+
+<div class="flag">
+<span class="label">Flag &mdash; what is and is not proved here.</span>
+The SLLN under the sharp assumption $E|X_1|\lt\infty$ is <strong>stated without proof</strong> on this page; the Borel&ndash;Cantelli argument below proves it only under the much stronger $EX_1^4\lt\infty$. The gap is not cosmetic &mdash; closing it is a real piece of work (Etemadi's truncation proof, or Kolmogorov's inequality plus a subsequence argument). Named results cited in passing on this page (Luk&aacute;cs 1942 for the $\bar X\perp S^2$ converse, de Finetti, L&eacute;vy continuity, Smirnov/probability integral transform) are attributions given from memory and not checked against the original papers; the statements are standard, but verify the citation before quoting one.
 </div>
 <div class="box thm">
 <span class="label">Borel&ndash;Cantelli criterion, and the SLLN under a fourth moment.</span>
@@ -418,7 +423,7 @@ $X_n\xrightarrow{d}X$ if $F_{X_n}(x)\to F_X(x)$ at every continuity point $x$ of
 </div>
 <div class="box thm">
 <span class="label">Central Limit Theorem.</span>
-If $X_i$ iid, $E[X_1]=\mu$, $0<\mathrm{Var}(X_1)=\sigma^2<\infty$, then $\dfrac{\sqrt n(\bar X_n-\mu)}{\sigma}\xrightarrow{d}N(0,1)$.
+If $X_i$ iid, $E[X_1]=\mu$, $0\lt\mathrm{Var}(X_1)=\sigma^2\lt\infty$, then $\dfrac{\sqrt n(\bar X_n-\mu)}{\sigma}\xrightarrow{d}N(0,1)$.
 <p class="proof-label">Proof sketch (characteristic functions).</p>
 Let $Y_i=(X_i-\mu)/\sigma$, $\varphi(t)=E[e^{itY_1}]=1-\tfrac{t^2}2+o(t^2)$. The standardized sum has characteristic function $\varphi(t/\sqrt n)^n=\big(1-\tfrac{t^2}{2n}+o(1/n)\big)^n\to e^{-t^2/2}$, the $N(0,1)$ characteristic function. L&eacute;vy's continuity theorem converts pointwise convergence of characteristic functions into $\xrightarrow{d}$. <span class="qed">&#8718;</span>
 </div>
@@ -567,7 +572,7 @@ Poisson(3) via exponential arrivals in [0,1] (200,000 reps): mean = 2.9968, var 
 <h3>&sect;5.6.3 The Accept/Reject Algorithm</h3>
 <div class="box thm">
 <span class="label">Accept/Reject.</span>
-To sample target density $f$ using proposal density $g$ (easy to sample) with $M=\sup_x f(x)/g(x)<\infty$: draw $Y\sim g$, $U\sim\mathrm{Uniform}(0,1)$ independent; accept $X=Y$ if $U\le \frac{f(Y)}{M\,g(Y)}$, else repeat.
+To sample target density $f$ using proposal density $g$ (easy to sample) with $M=\sup_x f(x)/g(x)\lt\infty$: draw $Y\sim g$, $U\sim\mathrm{Uniform}(0,1)$ independent; accept $X=Y$ if $U\le \frac{f(Y)}{M\,g(Y)}$, else repeat.
 <p class="proof-label">Proof of correctness.</p>
 $P(\text{accept}\mid Y=y)=\frac{f(y)}{Mg(y)}$, so for any Borel $B$,
 $$P(Y\in B,\text{accept})=\int_B \frac{f(y)}{Mg(y)}g(y)\,dy=\frac1M\int_B f(y)\,dy.$$

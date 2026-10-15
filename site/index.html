@@ -16,7 +16,7 @@ MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$
   <a class="chip done" href="ch05/index.html">5</a>
   <a class="chip done" href="ch06/index.html">6</a>
   <a class="chip done" href="ch07/index.html">7</a>
-  <a class="chip" href="ch08/index.html">8</a>
+  <a class="chip done" href="ch08/index.html">8</a>
   <a class="chip" href="ch09/index.html">9</a>
   <a class="chip" href="ch10/index.html">10</a>
   <a class="chip" href="ch11/index.html">11</a>
@@ -36,6 +36,19 @@ MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$
     <li><strong>Intuition.</strong> Why each idea matters, where it breaks, and how it shows up in quantitative / ML / experimentation work.</li>
   </ul>
 
+  <div class="caveats">
+  <h2>How to read these notes &mdash; caveats</h2>
+  <p>These notes were drafted by an AI assistant (Kiro) working interactively, and these are the limitations a reader should know about up front. Where a specific claim is contested or unverified, it carries an inline <strong>&#9888; Flag</strong> box on the page itself.</p>
+  <ul>
+    <li><strong>Cross-check against the book.</strong> Every proof here was written out rather than copied, which means every proof is also a place an error could have entered. The book is the authority; these notes are a companion to it. Section numbering follows C&amp;B 2nd edition.</li>
+    <li><strong>The LaTeX twins have never been compiled.</strong> No TeX engine was available in the environment where they were written, so each <code>chNN.tex</code> is unverified source. Expect to fix small errors on first compile (Overleaf is the easy path).</li>
+    <li><strong>The rendered pages were never viewed by their author.</strong> The authoring environment had no browser and no outside network access. Layout, MathJax rendering, and overflow were checked by script (tag balance, link resolution, estimated equation widths), not by eye.</li>
+    <li><strong>Simulation numbers come from single seeded runs.</strong> Each <em>Simulation Check</em> box reports real output &mdash; nothing is invented &mdash; but Monte Carlo error typically affects the last one or two digits shown. Theoretical targets are printed alongside precisely so you can judge the agreement. Every script and its saved output live in <code>simulations/</code> in the repository; re-running reproduces the quoted figures exactly.</li>
+    <li><strong>Everything is pure-standard-library Python.</strong> No NumPy or SciPy was available, so distributions, quantiles, and the incomplete beta function are implemented from scratch in <code>simulations/statlib.py</code>. That module self-checks against published table values, but it is not a substitute for a tested numerical library.</li>
+    <li><strong>Simulations illustrate, they do not prove.</strong> A matching simulation is evidence that a derivation was transcribed correctly, not that a theorem is true. The proofs carry the argument; the numbers are a sanity check on them.</li>
+  </ul>
+  </div>
+
   <h2>Chapters</h2>
   <p>We begin at Chapter 5 (Chapters 1&ndash;4 are assumed). Chapters fill in one session at a time; each lives in its own folder with an HTML page and a LaTeX twin.</p>
 
@@ -43,7 +56,7 @@ MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$
     <a class="card done" href="ch05/index.html"><h3>5. Properties of a Random Sample</h3><p><span class="badge">&#10003; complete</span><br>Random samples, sums &amp; MGFs, normal sampling theory, order statistics, convergence concepts, delta method, random generation.</p></a>
     <a class="card done" href="ch06/index.html"><h3>6. Principles of Data Reduction</h3><p><span class="badge">&#10003; complete</span><br>Sufficiency, minimal sufficiency, ancillarity, completeness, likelihood &amp; equivariance principles.</p></a>
     <a class="card done" href="ch07/index.html"><h3>7. Point Estimation</h3><p><span class="badge">&#10003; complete</span><br>Method of moments, MLE, Bayes, EM; MSE, UMVUE, Cram&eacute;r&ndash;Rao, Rao&ndash;Blackwell, loss optimality.</p></a>
-    <a class="card" href="ch08/index.html"><h3>8. Hypothesis Testing</h3><p><span class="badge todo">todo</span><br>LRTs, Bayesian &amp; UI/IU tests; power, Neyman&ndash;Pearson, p-values, loss optimality.</p></a>
+    <a class="card done" href="ch08/index.html"><h3>8. Hypothesis Testing</h3><p><span class="badge">&#10003; complete</span><br>LRTs, Bayesian &amp; UI/IU tests; power, Neyman&ndash;Pearson, p-values, loss optimality.</p></a>
     <a class="card" href="ch09/index.html"><h3>9. Interval Estimation</h3><p><span class="badge todo">todo</span><br>Inverting tests, pivots, pivoting the CDF, Bayesian intervals; coverage &amp; optimality.</p></a>
     <a class="card" href="ch10/index.html"><h3>10. Asymptotic Evaluations</h3><p><span class="badge todo">todo</span><br>Consistency, efficiency, bootstrap SEs, robustness, M-estimators, large-sample tests &amp; intervals.</p></a>
     <a class="card" href="ch11/index.html"><h3>11. ANOVA &amp; Regression</h3><p><span class="badge todo">todo</span><br>Oneway ANOVA, contrasts, the F test, simple linear regression, BLUE, prediction.</p></a>
@@ -51,7 +64,7 @@ MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$
   </div>
 
   <h2>Status</h2>
-  <p><strong>Chapters 5&ndash;7 are complete.</strong> Remaining chapters are scaffolded with their full section structure and will be filled in one session at a time &mdash; prompt for a chapter (or specific sections) and the content drops into the slot already built here.</p>
+  <p><strong>Chapters 5&ndash;8 are complete.</strong> Remaining chapters are scaffolded with their full section structure and will be filled in one session at a time &mdash; prompt for a chapter (or specific sections) and the content drops into the slot already built here.</p>
 </main>
 </body>
 </html>

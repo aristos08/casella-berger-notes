@@ -139,6 +139,33 @@ ul { margin-top: 0.3em; }
 .pagenav a { color: var(--accent); text-decoration: none; }
 .pagenav a:hover { text-decoration: underline; }
 
+/* ---- Inline caveat flag: something unverified, contested, or not reproduced ---- */
+.flag {
+  border: 1px solid #d9a441;
+  border-left: 4px solid #d9a441;
+  background: #fdf6e7;
+  padding: 10px 16px;
+  margin: 1.2em 0;
+  border-radius: 2px;
+}
+.flag .label {
+  font-weight: bold;
+  color: #8a5a00;
+}
+.flag .label::before { content: "\26A0  "; }
+
+/* ---- Caveats panel on the landing page ---- */
+.caveats {
+  border: 1px solid #c9c9c9;
+  background: #f6f6f4;
+  border-radius: 4px;
+  padding: 4px 20px 14px;
+  margin: 1.8em 0;
+}
+.caveats h2 { margin-top: 0.8em; border: none; font-size: 1.15em; }
+.caveats ul { font-size: 0.95em; }
+.caveats li { margin-bottom: 0.5em; }
+
 /* ---- TODO banner on skeleton chapters ---- */
 .todo-banner {
   background: #fff3cd; border: 1px solid #e0c76b; border-radius: 4px;

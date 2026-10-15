@@ -16,7 +16,7 @@ MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$
   <a class="chip done" href="../ch05/index.html">5</a>
   <a class="chip done" href="../ch06/index.html">6</a>
   <a class="chip current done" href="../ch07/index.html">7</a>
-  <a class="chip" href="../ch08/index.html">8</a>
+  <a class="chip done" href="../ch08/index.html">8</a>
   <a class="chip" href="../ch09/index.html">9</a>
   <a class="chip" href="../ch10/index.html">10</a>
   <a class="chip" href="../ch11/index.html">11</a>
@@ -259,6 +259,11 @@ iterations where the log-likelihood DECREASED: 0     (theorem says 0)
 40 random starts: best final loglik = -775.119, worst = -775.119,
                   reached the best value 40/40 times</pre>
 <p>Monotonicity holds exactly, as proved. I should be straight about the last line: in this <em>well-separated</em> mixture every random start found the same optimum, so this run does <strong>not</strong> demonstrate a local-maximum trap. Such traps are real and well documented for overlapping components and higher-dimensional mixtures &mdash; but I did not reproduce one here, and I am not going to claim otherwise.</p>
+</div>
+
+<div class="flag">
+<span class="label">Flag &mdash; a claim this page does <em>not</em> support.</span>
+A first draft of this section asserted that the $40$ random starts demonstrated EM getting trapped in local maxima. Its own output refutes that: all $40$ reached the same log-likelihood, $-775.119$. The assertion was removed rather than quietly softened, and the honest finding is reported above. If you want to see a genuine local-maximum trap, move the component means closer together (say $\mu_2=1$ instead of $3$) so the components overlap substantially, or go to three or more components; the literature on mixture likelihood surfaces documents the phenomenon thoroughly. The unboundedness result in the next box is the failure mode this page <em>does</em> establish, and it is a stronger one, because it says no maximizer exists at all.
 </div>
 
 <div class="box remark">

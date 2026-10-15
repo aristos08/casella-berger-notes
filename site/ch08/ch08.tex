@@ -1,52 +1,193 @@
 \documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb,amsthm,mathtools,booktabs,enumitem,hyperref,xcolor}
-\usepackage{tcolorbox}\tcbuselibrary{theorems}
+\usepackage{tcolorbox}
+\tcbuselibrary{theorems}
+
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{remark}[theorem]{Remark}
-\newtcolorbox{simbox}{colback=blue!4!white,colframe=blue!40!black,boxrule=0.4pt,title=Simulation Check}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtcolorbox{simbox}{colback=blue!4!white,colframe=blue!40!black,boxrule=0.4pt,arc=1pt,title=Simulation Check}
+\newtcolorbox{flagbox}{colback=yellow!8!white,colframe=orange!70!black,boxrule=0.6pt,arc=1pt,title=Flag}
+
+\DeclareMathOperator{\Var}{Var}\DeclareMathOperator{\E}{E}
+\newcommand{\R}{\mathbb{R}}\newcommand{\ind}{\mathbf 1}
+\newcommand{\convD}{\xrightarrow{d}}
+
 \title{Casella \& Berger, Chapter 8\\[2pt]\large Hypothesis Testing}
 \author{Course notes}\date{}
-\begin{document}\maketitle
 
-% ===================================================================
-% NOT YET WRITTEN. Section skeleton only.
-% Fill each section with: definitions, full proofs, intuition,
-% and a simbox reporting real seeded-simulation output.
-% ===================================================================
+\begin{document}
+\maketitle
 
 \section{\S8.1 Introduction}
-% TODO
+\begin{definition}
+Partition $\Theta=\Theta_0\cup\Theta_1$. A test of $H_0:\theta\in\Theta_0$ against $H_1:\theta\in\Theta_1$ specifies a rejection region $R$, equivalently a test function $\varphi=\ind_R$; allowing $\varphi(x)\in[0,1]$ gives a randomized test.
+\end{definition}
+\begin{remark}
+The asymmetry between $H_0$ and $H_1$ is a convention: the framework caps the probability of falsely rejecting $H_0$ at $\alpha$ and then maximizes power subject to that cap. That encodes a judgment that false discoveries are worse than missed ones. Also, ``accept $H_0$'' is a misnomer: a low-power test fails to reject almost regardless of the truth.
+\end{remark}
 
 \section{\S8.2 Methods of Finding Tests}
-% TODO
+\subsection{\S8.2.1 Likelihood ratio tests}
+\begin{definition}
+$\lambda(x)=\dfrac{\sup_{\theta\in\Theta_0}L(\theta\mid x)}{\sup_{\theta\in\Theta}L(\theta\mid x)}\in[0,1]$; the LRT rejects for small $\lambda$.
+\end{definition}
+\begin{proposition}
+If $T$ is sufficient then $\lambda$ depends on $x$ only through $T(x)$.
+\end{proposition}
+\begin{proof}
+Factorization gives $L=g(T(x)\mid\theta)h(x)$; the factor $h(x)$ cancels between numerator and denominator.
+\end{proof}
+\begin{theorem}[The LRT for a normal mean is the $t$-test]
+For iid $N(\mu,\sigma^2)$ with both unknown and $H_0:\mu=0$,
+\[\lambda(x)=\Big(1+\frac{t^2}{n-1}\Big)^{-n/2},\qquad t=\frac{\bar x}{s/\sqrt n},\]
+so $\{\lambda\le c\}=\{|t|\ge c'\}$.
+\end{theorem}
+\begin{proof}
+Maximizing over $\sigma^2$ at fixed $\mu$ gives $\hat\sigma^2=\frac1n\sum(x_i-\mu)^2$ and $\sup_{\sigma^2}L=(2\pi\hat\sigma^2)^{-n/2}e^{-n/2}$, so the ratio of suprema is a ratio of residual sums of squares, $\lambda=\big(\sum(x_i-\bar x)^2/\sum x_i^2\big)^{n/2}$. Since $\sum x_i^2=SS+n\bar x^2$ with $SS=\sum(x_i-\bar x)^2$, $\lambda=(1+n\bar x^2/SS)^{-n/2}$, and $n\bar x^2/SS=t^2/(n-1)$ because $s^2=SS/(n-1)$. The map $u\mapsto(1+u/(n-1))^{-n/2}$ is strictly decreasing.
+\end{proof}
+\begin{remark}
+The LRT is automatic, respects sufficiency, reproduces the classical $t$, $F$ and $\chi^2$ tests, and satisfies $-2\log\lambda(X)\convD\chi^2_\nu$ under regularity (\S10.3.1), which is what makes nested-model comparison possible in GLMs.
+\end{remark}
+\begin{simbox}
+$n=10$, 100k random samples: $\max|\lambda-(1+t^2/(n-1))^{-n/2}|=3.664\times10^{-15}$ --- machine precision, as an algebraic identity requires.
+\end{simbox}
 
-\subsection{\S8.2.1 Likelihood Ratio Tests}
-% TODO
+\subsection{\S8.2.2 Bayesian tests}
+\begin{definition}
+Reject when $P(\theta\in\Theta_0\mid x)$ is small. The Bayes factor is $B_{01}=P(x\mid H_0)/P(x\mid H_1)$, a ratio of marginal likelihoods, so posterior odds $=B_{01}\times$ prior odds.
+\end{definition}
+\begin{theorem}
+For $\bar X\sim N(\mu,\sigma^2/n)$, $\sigma$ known, testing $H_0:\mu=0$ with $\mu\sim N(0,\tau^2)$ under $H_1$: with $z=\bar x/(\sigma/\sqrt n)$ and $r=\tau^2/(\sigma^2/n)$,
+\[B_{01}=\sqrt{1+r}\,\exp\Big(-\frac{z^2}{2}\cdot\frac{r}{1+r}\Big).\]
+\end{theorem}
+\begin{proof}
+Under $H_0$, $\bar X\sim N(0,v)$ with $v=\sigma^2/n$; under $H_1$, marginally $\bar X\sim N(0,v+\tau^2)$. The ratio of normalizers is $\sqrt{(v+\tau^2)/v}=\sqrt{1+r}$ and the exponent is $-\frac{\bar x^2}2\big(\frac1v-\frac1{v+\tau^2}\big)=-\frac{z^2}2\frac r{1+r}$.
+\end{proof}
+\begin{remark}[Jeffreys--Lindley]
+Hold $z=1.95996$ (two-sided $p=0.05$) and let $n\to\infty$ with $\tau=\sigma$, so $r=n$: then $B_{01}\sim\sqrt n\,e^{-z^2/2}\to\infty$. A fixed $p$-value becomes unbounded evidence \emph{for} a point null, because at large $n$ an effect barely detectable at $p=0.05$ is a tiny effect, better explained by ``exactly zero'' than by a diffuse prior.
+\end{remark}
+\begin{simbox}
+Fixed two-sided $p=0.05$, equal prior odds: $P(H_0\mid x)=0.3665,\,0.6001,\,0.8228,\,0.9361,\,0.9789$ at $n=10,10^2,10^3,10^4,10^5$ (with $B_{01}=0.5786,\,1.5006,\,4.6440,\,14.6536,\,46.3285$).
+\end{simbox}
+\begin{flagbox}
+These numbers depend on $\tau=\sigma$ and on giving $H_0$ prior mass $\frac12$; a different $\tau$ shifts them and without an atom at $\mu=0$ the comparison collapses. What is robust is the direction and the divergence, not the specific posterior values.
+\end{flagbox}
 
-\subsection{\S8.2.2 Bayesian Tests}
-% TODO
-
-\subsection{\S8.2.3 Union-Intersection and Intersection-Union Tests}
-% TODO
+\subsection{\S8.2.3 Union--intersection and intersection--union tests}
+\begin{definition}
+With components $H_{0\gamma}:\theta\in\Theta_\gamma$ and regions $R_\gamma$: if $\Theta_0=\bigcap_\gamma\Theta_\gamma$ the \emph{UIT} rejects when any component rejects, $R=\bigcup R_\gamma$; if $\Theta_0=\bigcup_\gamma\Theta_\gamma$ the \emph{IUT} rejects only when all reject, $R=\bigcap R_\gamma$.
+\end{definition}
+Examples: $\{\mu=\mu_0\}=\{\mu\le\mu_0\}\cap\{\mu\ge\mu_0\}$ makes the two-sided $t$-test a UIT. Bioequivalence requires rejecting $H_0:|\delta|\ge\Delta=\{\delta\ge\Delta\}\cup\{\delta\le-\Delta\}$, so TOST is an IUT; co-primary endpoints are the same structure.
 
 \section{\S8.3 Methods of Evaluating Tests}
-% TODO
+\subsection{\S8.3.1 Error probabilities and the power function}
+\begin{definition}
+$\beta(\theta)=P_\theta(X\in R)=\E_\theta[\varphi(X)]$. Size $=\sup_{\Theta_0}\beta(\theta)$; level $\alpha$ means size $\le\alpha$. Size is what a test spends, level is the budget it promises.
+\end{definition}
+\begin{remark}
+For discrete statistics only finitely many sizes are achievable, so a nominal $\alpha$ is generally unreachable and the test is strictly conservative. Randomized tests close the gap and are not used in practice, so the lost power is simply forfeited.
+\end{remark}
+\begin{simbox}
+One-sample $t$-test, $n=10$, $\alpha=0.05$, critical value $t_{0.975,9}=2.2622$, 100k reps: power $=0.0496,\,0.1091,\,0.2959,\,0.5633,\,0.8025,\,0.9872$ at $\mu=0,\,0.25,\,0.5,\,0.75,\,1,\,1.5$. The first entry is the size.\\
+Binomial$(20,p)$, $H_0:p=0.5$: $P(X\ge k\mid0.5)=0.25172,\,0.13159,\,0.05766,\,0.02069$ at $k=12,13,14,15$. The smallest $k$ with tail $\le0.05$ is $15$, achieved size $0.02069$ (simulated $0.02069$): the ``5\% test'' spends 41\% of its budget.
+\end{simbox}
 
-\subsection{\S8.3.1 Error Probabilities and the Power Function}
-% TODO
+\subsection{\S8.3.2 Most powerful tests}
+\begin{definition}
+A level-$\alpha$ test is UMP if its power is at least that of every level-$\alpha$ test at every $\theta\in\Theta_1$.
+\end{definition}
+\begin{theorem}[Neyman--Pearson]
+For $H_0:\theta=\theta_0$ vs $H_1:\theta=\theta_1$, suppose $\varphi=1$ when $f_1>kf_0$ and $\varphi=0$ when $f_1<kf_0$ for some $k\ge0$, with $\E_{\theta_0}\varphi=\alpha$. Then $\varphi$ is most powerful at level $\alpha$; and any most powerful level-$\alpha$ test agrees with $\varphi$ a.e.\ on $\{f_1\ne kf_0\}$.
+\end{theorem}
+\begin{proof}
+For any $\varphi'$ with $\E_{\theta_0}\varphi'\le\alpha$, the product $(\varphi-\varphi')(f_1-kf_0)\ge0$ pointwise: where $f_1-kf_0>0$, $\varphi=1\ge\varphi'$; where $f_1-kf_0<0$, $\varphi=0\le\varphi'$; where it vanishes the product is $0$. Integrating,
+\[\beta(\theta_1)-\beta'(\theta_1)\ \ge\ k\big[\alpha-\E_{\theta_0}\varphi'\big]\ \ge\ 0 .\]
+If $\varphi'$ is also most powerful, both inequalities are equalities, so $\int(\varphi-\varphi')(f_1-kf_0)=0$ with a nonnegative integrand, forcing $\varphi'=\varphi$ a.e.\ where $f_1\ne kf_0$.
+\end{proof}
+\begin{remark}
+Read the lemma as greedy optimality: buy rejection region in decreasing order of the likelihood ratio $f_1/f_0$ until the budget $\alpha$ is spent; $k$ is the exchange rate.
+\end{remark}
+\begin{definition}
+$\{g(t\mid\theta)\}$ has MLR in $t$ if $g(t\mid\theta_2)/g(t\mid\theta_1)$ is nondecreasing in $t$ whenever $\theta_2>\theta_1$. Every regular one-parameter exponential family with increasing natural parameter has MLR in its natural sufficient statistic.
+\end{definition}
+\begin{lemma}
+Under MLR, $\theta\mapsto\E_\theta[\psi(T)]$ is nondecreasing for every nondecreasing $\psi$.
+\end{lemma}
+\begin{proof}
+Fix $\theta_2>\theta_1$; $r(t)=g(t\mid\theta_2)/g(t\mid\theta_1)$ is nondecreasing and, since both densities integrate to 1, crosses 1 at some $t^*$, so $g(\cdot\mid\theta_2)-g(\cdot\mid\theta_1)$ is $\le0$ below $t^*$ and $\ge0$ above. As $\int[g(\cdot\mid\theta_2)-g(\cdot\mid\theta_1)]=0$ we may subtract $\psi(t^*)$:
+\[\E_{\theta_2}\psi-\E_{\theta_1}\psi=\int[\psi(t)-\psi(t^*)][g(t\mid\theta_2)-g(t\mid\theta_1)]dt,\]
+whose integrand is a product of two factors of equal sign, hence $\ge0$.
+\end{proof}
+\begin{theorem}[Karlin--Rubin]
+If $T$ is sufficient with MLR densities, then for $H_0:\theta\le\theta_0$ vs $H_1:\theta>\theta_0$ the test rejecting iff $T>t_0$, with $P_{\theta_0}(T>t_0)=\alpha$, is UMP level $\alpha$.
+\end{theorem}
+\begin{proof}
+\emph{Size}: $\ind\{t>t_0\}$ is nondecreasing, so by the Lemma $\beta$ is nondecreasing and $\sup_{\theta\le\theta_0}\beta=\beta(\theta_0)=\alpha$. \emph{Optimality}: for any $\theta'>\theta_0$, MLR makes $g(t\mid\theta')/g(t\mid\theta_0)$ nondecreasing, so $\{$ratio $>k\}$ is an upper interval $\{t>t_0\}$; the test is therefore of Neyman--Pearson form for the pair $(\theta_0,\theta')$ and maximizes power at $\theta'$. It does not depend on $\theta'$, so it is UMP. (Discrete $T$ may need boundary randomization for exact size.)
+\end{proof}
+\begin{proposition}[No UMP test two-sided]
+For $H_0:\mu=\mu_0$ vs $H_1:\mu\ne\mu_0$ in the normal location model and $0<\alpha<1/2$, no UMP level-$\alpha$ test exists.
+\end{proposition}
+\begin{proof}
+If $\varphi^*$ were UMP, then at $\mu_1>\mu_0$ its power equals that of the one-sided $\varphi_+$ (each is at least the other's), so $\varphi^*$ is most powerful there and the necessity clause of Neyman--Pearson gives $\varphi^*=\varphi_+$ a.e. Repeating at $\mu_2<\mu_0$ gives $\varphi^*=\varphi_-$ a.e. For $\alpha<1/2$ the two rejection regions are disjoint with positive probability, a contradiction.
+\end{proof}
+The standard repair is to restrict the competing class --- to unbiased tests ($\beta\ge\alpha$ on $\Theta_1$) or to tests invariant under the problem's symmetries (\S6.4) --- within which the two-sided test is optimal.
+\begin{simbox}
+Simple vs simple ($\mu=0$ vs $\mu=0.5$, $n=10$, $\alpha=0.05$, 200k reps): sizes $0.0500/0.0506/0.0500$ and powers $0.4757/0.3834/0.1258$ for the $\bar X$ (NP), median and $X_1$ tests; analytic powers $0.4746$ and $0.1261$ match.\\
+One-sided UMP dominance (120k reps per $\mu$), power of $\bar X$ / median / $X_1$: $(0.0497,0.0502,0.0501)$ at $\mu=0$; $(0.1562,0.1339,0.0747)$ at $0.2$; $(0.3520,0.2849,0.1061)$ at $0.4$; $(0.6032,0.4915,0.1471)$ at $0.6$; $(0.8115,0.6947,0.1983)$ at $0.8$.\\
+Crossing power curves (one-sided vs two-sided, both size $0.05$): $(0.0000,0.8860)$ at $\mu=-1$; $(0.0007,0.3527)$ at $-0.5$; $(0.0496,0.0490)$ at $0$; $(0.1569,0.0982)$ at $0.2$; $(0.9346,0.8851)$ at $1$. Neither dominates.
+\end{simbox}
 
-\subsection{\S8.3.2 Most Powerful Tests}
-% TODO
+\subsection{\S8.3.3 Sizes of UITs and IUTs}
+\begin{theorem}[IUTs need no multiplicity correction]
+If $\Theta_0=\bigcup_\gamma\Theta_\gamma$ and each component test has level $\alpha$, the IUT with $R=\bigcap_\gamma R_\gamma$ has level $\alpha$.
+\end{theorem}
+\begin{proof}
+If $\theta\in\Theta_0$ then $\theta\in\Theta_{\gamma_0}$ for some $\gamma_0$, and $R\subset R_{\gamma_0}$, so $P_\theta(R)\le P_\theta(R_{\gamma_0})\le\alpha$.
+\end{proof}
+\begin{remark}
+Requiring several endpoints each significant at $\alpha$ controls the overall rate at $\alpha$ with no Bonferroni penalty, the opposite of the usual multiplicity intuition: to err you need every component to reject while some component null holds, and that one true component already caps the probability. For a UIT, by contrast, the union bound gives only $P_\theta(R)\le\sum_\gamma P_\theta(R_\gamma)\le|\Gamma|\alpha$ --- the Bonferroni correction --- and exact calibration from the joint distribution does better (\S11.2.5).
+\end{remark}
+\begin{flagbox}
+C\&B \S8.3.3 proves sharper UIT results for likelihood-ratio components (where $\lambda=\inf_\gamma\lambda_\gamma$). Only the union bound is proved here.
+\end{flagbox}
+\begin{simbox}
+$H_0:\mu_1\le0$ or $\mu_2\le0$; reject iff both one-sided $z$-tests reject at $0.05$; $n=10$ each, 120k reps. Rejection probability $=0.0027$ at $(0,0)$ (i.e.\ $\approx\alpha^2$), then $0.0235,\,0.0470,\,0.0505$ at $(0,0.5),(0,1),(0,3)$, and $0.0007$ at $(-0.5,3)$. Size is $\alpha$, attained only in the limit; the test is conservative in the interior of $H_0$.
+\end{simbox}
 
-\subsection{\S8.3.3 Sizes of Union-Intersection and Intersection-Union Tests}
-% TODO
+\subsection{\S8.3.4 p-values}
+\begin{definition}
+$p(X)\in[0,1]$ is a valid $p$-value if $P_\theta(p(X)\le\alpha)\le\alpha$ for all $\theta\in\Theta_0$ and all $\alpha$ --- exactly the property that thresholding at $\alpha$ gives a level-$\alpha$ test.
+\end{definition}
+\begin{theorem}
+$p(x)=\sup_{\theta\in\Theta_0}P_\theta(W\ge W(x))$ is valid. If $H_0$ is simple and $W$ has continuous strictly increasing cdf $F$ under $H_0$, then $p(X)\sim\mathrm{Uniform}(0,1)$ exactly.
+\end{theorem}
+\begin{proof}
+$p(X)=1-F(W)$, and continuity of $F$ gives $F(W)\sim\mathrm{Uniform}(0,1)$ by the probability integral transform (\S5.6.1); hence so does $1-F(W)$, and $P(p\le\alpha)=\alpha$. With atoms one gets $P(F(W)\le u)\le u$: still valid, strictly conservative (\S8.3.1).
+\end{proof}
+\begin{simbox}
+Exact two-sided $t$ $p$-values, $n=10$, 200k reps. Under $\mu=0$: $q_{10}=0.0997$, $q_{25}=0.2502$, $q_{50}=0.4999$, $q_{75}=0.7500$, $q_{90}=0.8991$, and $P(p\le0.05)=0.0504$ --- the quantiles lie on the diagonal. Under $\mu=0.5$: $P(p\le0.05)=0.2955$; under $\mu=1$: $0.8024$ --- the same numbers as the power function, as they must be.
+\end{simbox}
+\begin{flagbox}
+A $p$-value is not $P(H_0\mid\text{data})$ (\S8.2.2 gives $0.37$ to $0.98$ at $p=0.05$), not the probability the finding is a fluke, and a large $p$ is not evidence for $H_0$ when power is low. Per \S6.3 it also depends on the sampling plan, so it is not a function of the likelihood alone.
+\end{flagbox}
 
-\subsection{\S8.3.4 p-Values}
-% TODO
+\subsection{\S8.3.5 Loss function optimality}
+With actions $\{0,1\}$ and generalized $0$--$1$ loss charging $c_{\mathrm I}$ for a type I error and $c_{\mathrm{II}}$ for a type II error:
+\begin{theorem}
+A Bayes rule rejects $H_0$ iff $\dfrac{P(\Theta_1\mid x)}{P(\Theta_0\mid x)}>\dfrac{c_{\mathrm I}}{c_{\mathrm{II}}}$.
+\end{theorem}
+\begin{proof}
+Minimize posterior expected loss pointwise (\S7.3.4): accepting costs $c_{\mathrm{II}}P(\Theta_1\mid x)$, rejecting costs $c_{\mathrm I}P(\Theta_0\mid x)$; rejecting is preferred iff the latter is smaller.
+\end{proof}
+\begin{remark}
+Since posterior odds $=B_{01}^{-1}\times$ prior odds, the Bayes test is a likelihood-ratio threshold --- structurally Neyman--Pearson with the threshold set by costs and prior rather than by a conventional $\alpha$. Thresholding $P(H_0\mid x)$ at $0.05$ means posterior odds above $19$, i.e.\ asserting $c_{\mathrm I}/c_{\mathrm{II}}=19$; few users of a 5\% cutoff intend that claim.
+\end{remark}
 
-\subsection{\S8.3.5 Loss Function Optimality}
-% TODO
+\section*{Where this leaves you}
+Construction: the LRT is the general recipe (sufficiency-respecting, reproduces the classical tests, $\chi^2$ asymptotics in Chapter 10); Bayesian tests threshold posterior odds; UITs and IUTs assemble composite nulls by logic alone. Evaluation: the power function is the object of interest and size is the budget spent; Neyman--Pearson with MLR solves the one-sided problem via Karlin--Rubin, while the two-sided problem provably has no UMP test; IUTs escape multiplicity corrections and UITs do not; and $p$-values are exactly uniform under a continuous simple null, which is both their justification and the source of every common misreading. Chapter 9 inverts all of it: a confidence set collects the parameter values a test would not reject, making the duality exact.
 
 \end{document}

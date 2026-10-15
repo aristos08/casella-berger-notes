@@ -16,7 +16,7 @@ MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']], displayMath: [['$$','$
   <a class="chip done" href="../ch05/index.html">5</a>
   <a class="chip current done" href="../ch06/index.html">6</a>
   <a class="chip done" href="../ch07/index.html">7</a>
-  <a class="chip" href="../ch08/index.html">8</a>
+  <a class="chip done" href="../ch08/index.html">8</a>
   <a class="chip" href="../ch09/index.html">9</a>
   <a class="chip" href="../ch10/index.html">10</a>
   <a class="chip" href="../ch11/index.html">11</a>
@@ -353,6 +353,11 @@ By the FSP, $\mathrm{Ev}(E^*,(1,x_1^*))=\mathrm{Ev}(E^*,(2,x_2^*))$. By the CP, 
 <div class="box remark">
 <span class="label">Consequences and controversy.</span>
 Under the LP the stopping rule is irrelevant once the data are in hand: both designs above must report the same evidence. A Bayesian analysis obeys this automatically: with a $\mathrm{Beta}(a,b)$ prior, both designs produce the posterior $\mathrm{Beta}(a+9,b+3)$. Frequentist error rates (like the $p$-values above) are computed over the <em>sample space</em>, which depends on the design, so they violate the LP. Frequentists reply that controlling error rates <em>is</em> the point, and that therefore the design is relevant. The Birnbaum argument itself is contested in the literature (see Mayo, <em>Statistical Science</em> 2014 for a critique and the replies it provoked), so treat the LP as a position with a famous proof, not as a settled fact.
+</div>
+
+<div class="flag">
+<span class="label">Flag &mdash; Birnbaum's theorem is genuinely disputed.</span>
+I have presented the standard discrete-case proof, and it is the one found in C&amp;B. But the claim that it establishes the likelihood principle has been attacked in the literature &mdash; most prominently by Deborah Mayo (<em>Statistical Science</em>, 2014), who argues the argument equivocates on what the sufficiency and conditionality principles are allowed to mean, with published replies defending it. I am not in a position to adjudicate that dispute, and this page does not. Read the proof as a precise statement about a particular formalization of "evidence", not as a demonstration that frequentist practice is incoherent.
 </div>
 
 <h3>Why this matters: optional stopping ("peeking")</h3>
